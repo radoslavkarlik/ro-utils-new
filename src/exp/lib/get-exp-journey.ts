@@ -16,6 +16,7 @@ import {
   isExpQuestWithMinLevel,
   quests,
 } from '@/exp/quests';
+import type { Quest } from '@/exp/quests';
 import type {
   ExpJourney,
   ExpJourneyMonsterStep,
@@ -27,7 +28,6 @@ import {
   type RawExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
-import type { Quest } from '@/exp/types/quest';
 import { numericallyAsc, sortByProp } from '@/lib/sort-by';
 
 type Args = {
@@ -75,33 +75,55 @@ export const getExpJourney = ({
     new Set(finishedQuests),
   );
 
+  const buildPrereqChain = (quest: Quest): ReadonlyArray<Quest> =>
+    isExpQuest(quest) && quest.prerequisite?.questIds
+      ? [
+          quest,
+          ...quest.prerequisite.questIds.flatMap((questId) =>
+            buildPrereqChain(quests[questId]),
+          ),
+        ]
+      : [quest];
+
+  const buildFollowUpChain = (quest: Quest): ReadonlyArray<Quest> =>
+    quest.followUpQuest
+      ? [quest, ...buildFollowUpChain(quests[quest.followUpQuest])]
+      : [quest];
+
   const getAdjustedMinQuestLevel = (
     quest: ExpQuestWithMinLevel,
   ): LevelExpPoint => {
-    const prereqs =
-      quest.prerequisite?.questIds?.map<LevelExpPoint>((prereqId) => {
-        const prereqQuest = adjustedQuests[prereqId];
+    return new Set(
+      buildPrereqChain(quest)
+        .concat(buildFollowUpChain(quest))
+        .map((quest) => quest.id),
+    )
+      .values()
+      .toArray()
+      .reduce<LevelExpPoint>(
+        (minLevels, id) => {
+          const associateQuest = adjustedQuests[id];
 
-        if (isExpQuestWithMinLevel(prereqQuest)) {
-          return getAdjustedMinQuestLevel(prereqQuest);
-        }
+          const minLevel = ((): LevelExpPoint => {
+            if (isExpQuestWithMinLevel(associateQuest)) {
+              return {
+                baseLvl: associateQuest.minRewardBaseLevel,
+                jobLvl: associateQuest.minRewardJobLevel,
+              };
+            }
 
-        const monster = monsters[prereqQuest.kills.monsterId];
+            const monster = monsters[associateQuest.kills.monsterId];
 
-        return { baseLvl: monster.prerequisite?.baseLevel ?? 0, jobLvl: 0 };
-      }) ?? [];
+            return { baseLvl: monster.prerequisite?.baseLevel ?? 0, jobLvl: 0 };
+          })();
 
-    return {
-      baseLvl: Math.max(
-        quest.prerequisite?.baseLevel ?? 0,
-        quest.minRewardBaseLevel,
-        ...prereqs.map((prereq) => prereq.baseLvl),
-      ),
-      jobLvl: Math.max(
-        quest.minRewardJobLevel,
-        ...prereqs.map((prereq) => prereq.jobLvl),
-      ),
-    };
+          return {
+            baseLvl: Math.max(minLevels.baseLvl, minLevel.baseLvl),
+            jobLvl: Math.max(minLevels.jobLvl, minLevel.jobLvl),
+          };
+        },
+        { baseLvl: 0, jobLvl: 0 },
+      );
   };
 
   let questsToDo = unfinishedQuestIds
@@ -366,11 +388,6 @@ export const getExpJourney = ({
 
   return steps;
 };
-
-const getMin = (exp1: RawExpPoint, exp2: RawExpPoint): RawExpPoint => ({
-  baseExp: Math.min(exp1.baseExp, exp2.baseExp),
-  jobExp: Math.min(exp1.jobExp, exp2.jobExp),
-});
 
 const steps = getExpJourney({
   start: { baseLvl: 11, jobLvl: 0 },

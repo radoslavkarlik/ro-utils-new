@@ -24,6 +24,7 @@ export type QuestPrerequisite = {
 
 export type ExpQuest = ExpReward & {
   readonly id: QuestId;
+  readonly followUpQuest?: QuestId;
   readonly prerequisite?: QuestPrerequisite;
 };
 
@@ -34,6 +35,7 @@ export type ExpQuestWithMinLevel = ExpQuest & {
 
 export type MonsterQuest = {
   readonly id: QuestId;
+  readonly followUpQuest?: QuestId;
   readonly kills: {
     readonly monsterId: MonsterId;
     readonly count: number;
@@ -41,6 +43,7 @@ export type MonsterQuest = {
 };
 
 export type Quest = ExpQuest | MonsterQuest;
+
 export type AdjustedQuest = ExpQuestWithMinLevel | MonsterQuest;
 
 export const isExpQuest = (quest: Quest): quest is ExpQuest =>
@@ -55,12 +58,14 @@ export const quests: Record<QuestId, Quest> = {
     id: QuestId.AcolyteTraining1,
     base: 2_000,
     job: 2_000,
+    followUpQuest: QuestId.AcolyteTraining2,
   },
   [QuestId.AcolyteTraining2]: {
     id: QuestId.AcolyteTraining2,
     base: 0,
     job: 1_000,
     prerequisite: { questIds: [QuestId.AcolyteTraining1] },
+    followUpQuest: QuestId.AcolyteTraining3,
   },
   [QuestId.AcolyteTraining3]: {
     id: QuestId.AcolyteTraining3,
