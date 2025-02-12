@@ -235,13 +235,21 @@ export const getExpJourney = ({
     steps = [...steps, { monsterId, count, expPoint: expLevel }];
   };
 
+  const meetsLevelRequirements = (target: ExpPoint): boolean => {
+    const targetRaw = isRawExpPoint(target) ? target : getRawExpPoint(target);
+
+    return (
+      expRaw.baseExp >= targetRaw.baseExp && expRaw.jobExp >= targetRaw.jobExp
+    );
+  };
+
   const performQuest = (quest: (typeof questsToDo)[number]): void => {
     const questMinLevel: ExpPoint = {
       baseLvl: quest.minBaseLvl,
       jobLvl: quest.minJobLvl,
     };
 
-    if (!meetsLevelRequirements(expRaw, questMinLevel)) {
+    if (!meetsLevelRequirements(questMinLevel)) {
       killMonsters(questMinLevel);
     }
 
@@ -265,10 +273,80 @@ export const getExpJourney = ({
   };
 
   const getQuestToDo = () => {
-    return questsToDo[0];
+    if (!questsToDo.length) {
+      return null;
+    }
+
+    return questsToDo.toSorted((quest1, quest2) => {
+      if (quest1.questPrerequisites?.includes(quest2.id)) {
+        return 1;
+      }
+
+      if (quest2.questPrerequisites?.includes(quest1.id)) {
+        return -1;
+      }
+
+      const req1: LevelExpPoint = {
+        baseLvl: quest1.minBaseLvl,
+        jobLvl: quest1.minJobLvl,
+      };
+
+      const req2: LevelExpPoint = {
+        baseLvl: quest2.minBaseLvl,
+        jobLvl: quest2.minJobLvl,
+      };
+
+      const meets1 = meetsLevelRequirements(req1);
+      const meets2 = meetsLevelRequirements(req2);
+
+      if (meets1 && !meets2) {
+        return -1;
+      }
+
+      if (meets2 && !meets1) {
+        return 1;
+      }
+
+      if (!meets1 && !meets2) {
+        const [count1] = calcMonsterCount(expRaw, req1, monsterId);
+        const [count2] = calcMonsterCount(expRaw, req2, monsterId);
+
+        return count1 - count2;
+      }
+
+      if (quest1.jobExp && !quest2.jobExp) {
+        return 1;
+      }
+
+      if (!quest1.jobExp && quest2.jobExp) {
+        return -1;
+      }
+
+      if (!quest1.jobExp && !quest2.jobExp) {
+        const minBase = Math.sign(quest1.minBaseLvl - quest2.minBaseLvl);
+
+        if (minBase) {
+          return minBase;
+        }
+
+        const baseExp = Math.sign(quest1.baseExp - quest2.baseExp);
+
+        if (baseExp) {
+          return baseExp;
+        }
+      }
+
+      const minJob = Math.sign(quest1.minJobLvl - quest2.minJobLvl);
+
+      if (minJob) {
+        return minJob;
+      }
+
+      return Math.sign(quest1.jobExp - quest2.jobExp);
+    })[0];
   };
 
-  while (!meetsLevelRequirements(expRaw, targetRaw)) {
+  while (!meetsLevelRequirements(targetRaw)) {
     const questToDo = getQuestToDo();
 
     if (questToDo) {
@@ -279,15 +357,6 @@ export const getExpJourney = ({
   }
 
   return steps;
-};
-
-const meetsLevelRequirements = (exp: ExpPoint, target: ExpPoint): boolean => {
-  const expRaw = isRawExpPoint(exp) ? exp : getRawExpPoint(exp);
-  const targetRaw = isRawExpPoint(target) ? target : getRawExpPoint(target);
-
-  return (
-    expRaw.baseExp >= targetRaw.baseExp && expRaw.jobExp >= targetRaw.jobExp
-  );
 };
 
 const getMin = (exp1: RawExpPoint, exp2: RawExpPoint): RawExpPoint => ({
