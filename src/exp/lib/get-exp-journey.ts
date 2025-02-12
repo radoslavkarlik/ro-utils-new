@@ -200,31 +200,12 @@ export const getExpJourney = ({
 
   const targetRaw = isRawExpPoint(target) ? target : getRawExpPoint(target);
 
-  const monsterIndex = 0;
-  const [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
+  let monsterIndex = 0;
+  let [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
 
   let steps: ReadonlyArray<ExpJourneyStep> = [];
 
-  const killMonsters = (target: ExpPoint): void => {
-    // if (monsterBaseLvlThresholds.length - 1 > monsterIndex) {
-    //   const [, nextMonsterThreshold] =
-    //     monsterBaseLvlThresholds[monsterIndex + 1]!;
-
-    //   const targetLevel = isRawExpPoint(target)
-    //     ? getLevelExpPoint(target)
-    //     : target;
-
-    //   if (nextMonsterThreshold <= targetLevel.baseLvl) {
-    //     monsterIndex++;
-    //     [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
-
-    //     killMonsters(
-    //       { baseLvl: nextMonsterThreshold, jobLvl: 0 },
-    //       monsterIdToKill,
-    //     );
-    //   }
-    // }
-
+  const killMonsters = (target: ExpPoint) => {
     const [count, newExpPoint] = calcMonsterCount(expRaw, target, monsterId);
 
     applyExp({
@@ -233,6 +214,33 @@ export const getExpJourney = ({
     });
 
     steps = [...steps, { monsterId, count, expPoint: expLevel }];
+  };
+
+  const getExpFromMonsters = (target: ExpPoint): void => {
+    if (monsterBaseLvlThresholds.length - 1 > monsterIndex) {
+      const [, nextMonsterThreshold] =
+        monsterBaseLvlThresholds[monsterIndex + 1]!;
+
+      if (nextMonsterThreshold <= expLevel.baseLvl) {
+        monsterIndex++;
+        [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
+        getExpFromMonsters(target);
+        return;
+      }
+
+      const targetLevel = isRawExpPoint(target)
+        ? getLevelExpPoint(target)
+        : target;
+
+      if (nextMonsterThreshold <= targetLevel.baseLvl) {
+        killMonsters({ baseLvl: nextMonsterThreshold, jobLvl: 0 });
+
+        monsterIndex++;
+        [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
+      }
+    }
+
+    killMonsters(target);
   };
 
   const meetsLevelRequirements = (target: ExpPoint): boolean => {
@@ -250,7 +258,7 @@ export const getExpJourney = ({
     };
 
     if (!meetsLevelRequirements(questMinLevel)) {
-      killMonsters(questMinLevel);
+      getExpFromMonsters(questMinLevel);
     }
 
     if (quest.monsterPrerequisites) {
@@ -352,7 +360,7 @@ export const getExpJourney = ({
     if (questToDo) {
       performQuest(questToDo);
     } else {
-      killMonsters(targetRaw);
+      getExpFromMonsters(targetRaw);
     }
   }
 
@@ -365,15 +373,16 @@ const getMin = (exp1: RawExpPoint, exp2: RawExpPoint): RawExpPoint => ({
 });
 
 const steps = getExpJourney({
-  start: { baseLvl: 24, jobLvl: 20 },
+  start: { baseLvl: 11, jobLvl: 0 },
   target: { jobLvl: 50, baseLvl: 0 },
   allowedQuests: Object.values(QuestId),
-  finishedQuests: [
-    QuestId.AcolyteTraining1,
-    QuestId.AcolyteTraining2,
-    QuestId.AcolyteTraining3,
+  finishedQuests: [],
+  allowedMonsters: [
+    MonsterId.Spore,
+    MonsterId.Metaling,
+    MonsterId.Muka,
+    MonsterId.Wolf,
   ],
-  allowedMonsters: [MonsterId.Metaling, MonsterId.Muka, MonsterId.Wolf],
 });
 
 console.log(steps);

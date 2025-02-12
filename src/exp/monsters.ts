@@ -1,6 +1,7 @@
 import type { ExpReward } from './calc';
 
 export enum MonsterId {
+  Spore = '1014',
   Muka = '1055',
   Wolf = '1013',
   Metaling = '1613',
@@ -17,7 +18,13 @@ export type Monster = ExpReward & {
 };
 
 export const monsters: Record<MonsterId, Monster> = {
-  [MonsterId.Muka]: { id: MonsterId.Muka, base: 273, job: 120 },
+  [MonsterId.Spore]: { id: MonsterId.Spore, base: 66, job: 108 },
+  [MonsterId.Muka]: {
+    id: MonsterId.Muka,
+    base: 273,
+    job: 120,
+    prerequisite: { baseLevel: 26 },
+  },
   [MonsterId.Wolf]: {
     id: MonsterId.Wolf,
     base: 329,
