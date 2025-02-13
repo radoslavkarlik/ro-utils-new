@@ -1,7 +1,6 @@
 import {
   type ExpReward,
   calcMonsterCount,
-  findMinimumLevelForExpReward,
   getLevelExpPoint,
   getRawExpPoint,
   willOverlevel,
@@ -11,6 +10,7 @@ import {
   OVERLEVEL_MAX_PERCENTAGE,
   OVERLEVEL_PROTECTION,
 } from '@/exp/constants';
+import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
 import { type Monster, MonsterId, monsters } from '@/exp/monsters';
 import {
   type AdjustedQuest,

@@ -4,3 +4,7 @@ save reason why certain step was made - eg prevent overleveling, reach next targ
 logic tests
 refactor
 code quality
+better global flags handling - rates etc
+choose correctly dataset baseexp, jobexp
+choose monsters from db
+quests from db?
