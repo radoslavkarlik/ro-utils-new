@@ -154,3 +154,32 @@ export const findMinimumLevelForExpReward = (
     jobLvl: overlevelMinJob,
   };
 };
+
+export const willOverlevel = (
+  expPoint: ExpPoint,
+  expReward: ExpReward,
+): { readonly base: boolean; readonly job: boolean } => {
+  if (!OVERLEVEL_PROTECTION) {
+    return { base: false, job: false };
+  }
+
+  const [expRaw, expLevel] = isRawExpPoint(expPoint)
+    ? [expPoint, getLevelExpPoint(expPoint)]
+    : [getRawExpPoint(expPoint), expPoint];
+
+  const targetExp: RawExpPoint = {
+    baseExp: expRaw.baseExp + expReward.base,
+    jobExp: expRaw.jobExp + expReward.job,
+  };
+
+  const overlevel = OVERLEVEL_MAX_PERCENTAGE / 100 + 1;
+
+  const targetLevel = getLevelExpPoint(targetExp);
+  const capLevelBase = Math.floor(expLevel.baseLvl) + overlevel;
+  const capLevelJob = Math.floor(expLevel.jobLvl) + overlevel;
+
+  return {
+    base: targetLevel.baseLvl > capLevelBase,
+    job: targetLevel.jobLvl > capLevelJob,
+  };
+};

@@ -1,10 +1,16 @@
 import {
+  type ExpReward,
   calcMonsterCount,
   findMinimumLevelForExpReward,
   getLevelExpPoint,
   getRawExpPoint,
+  willOverlevel,
 } from '@/exp/calc';
-import { EXP_QUEST_RATE } from '@/exp/constants';
+import {
+  EXP_QUEST_RATE,
+  OVERLEVEL_MAX_PERCENTAGE,
+  OVERLEVEL_PROTECTION,
+} from '@/exp/constants';
 import { type Monster, MonsterId, monsters } from '@/exp/monsters';
 import {
   type AdjustedQuest,
@@ -107,7 +113,10 @@ export const getExpJourney = ({
           const minLevel = ((): LevelExpPoint => {
             if (isExpQuestWithMinLevel(associateQuest)) {
               return {
-                baseLvl: associateQuest.minRewardBaseLevel,
+                baseLvl: Math.max(
+                  associateQuest.minRewardBaseLevel,
+                  associateQuest.prerequisite?.baseLevel ?? 0,
+                ),
                 jobLvl: associateQuest.minRewardJobLevel,
               };
             }
@@ -156,45 +165,6 @@ export const getExpJourney = ({
       } as const;
     })
     .toArray();
-  // .sort((a, b) => {
-  //   if (a.questPrerequisites?.includes(b.id)) {
-  //     return 1;
-  //   }
-
-  //   if (b.questPrerequisites?.includes(a.id)) {
-  //     return -1;
-  //   }
-
-  //   if (a.jobExp && !b.jobExp) {
-  //     return 1;
-  //   }
-
-  //   if (!a.jobExp && b.jobExp) {
-  //     return -1;
-  //   }
-
-  //   if (!a.jobExp && !b.jobExp) {
-  //     const minBase = Math.sign(a.minBaseLvl - b.minBaseLvl);
-
-  //     if (minBase) {
-  //       return minBase;
-  //     }
-
-  //     const baseExp = Math.sign(a.baseExp - b.baseExp);
-
-  //     if (baseExp) {
-  //       return baseExp;
-  //     }
-  //   }
-
-  //   const minJob = Math.sign(a.minJobLvl - b.minJobLvl);
-
-  //   if (minJob) {
-  //     return minJob;
-  //   }
-
-  //   return Math.sign(a.jobExp - b.jobExp);
-  // });
 
   const monsterBaseLvlThresholds = allowedMonsters
     .map((monsterId) => monsters[monsterId])
@@ -292,6 +262,24 @@ export const getExpJourney = ({
         jobExp: monster.job * count,
       });
     } else {
+      do {
+        const { base: overleveledBase, job: overleveledJob } = willOverlevel(
+          expRaw,
+          { base: quest.baseExp, job: quest.jobExp },
+        );
+
+        if (!overleveledBase && !overleveledJob) {
+          break;
+        }
+
+        const targetLevel: LevelExpPoint = {
+          baseLvl: overleveledBase ? Math.floor(expLevel.baseLvl) + 1 : 0,
+          jobLvl: overleveledJob ? Math.floor(expLevel.jobLvl) + 1 : 0,
+        };
+
+        getExpFromMonsters(targetLevel);
+      } while (true);
+
       applyExp({
         baseExp: quest.baseExp,
         jobExp: quest.jobExp,
