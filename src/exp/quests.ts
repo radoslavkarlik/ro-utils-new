@@ -49,21 +49,13 @@ export const quests: Record<QuestId, Quest> = {
     ],
     prerequisite: { jobLevel: 17 },
   },
-  [QuestId.Friendship1]: {
-    id: QuestId.Friendship1,
-    reward: {
-      base: 200_000,
-      job: 0,
-    },
+  [QuestId.Friendship]: {
+    id: QuestId.Friendship,
+    reward: [
+      { base: 200_000, job: 0 },
+      { base: 200_000, job: 0 },
+    ],
     prerequisite: { baseLevel: 50 },
-  },
-  [QuestId.Friendship2]: {
-    id: QuestId.Friendship2,
-    reward: {
-      base: 200_000,
-      job: 0,
-    },
-    prerequisite: { baseLevel: 50, questIds: [QuestId.Friendship1] },
   },
   [QuestId.Bruspetti]: {
     id: QuestId.Bruspetti,
@@ -71,7 +63,7 @@ export const quests: Record<QuestId, Quest> = {
       base: 450_000,
       job: 0,
     },
-    prerequisite: { baseLevel: 50, questIds: [QuestId.Friendship2] },
+    prerequisite: { baseLevel: 50, questIds: [QuestId.Friendship] },
   },
   [QuestId.LostChild]: {
     id: QuestId.LostChild,
