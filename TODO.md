@@ -1,5 +1,8 @@
-better min level decision - figure out the very earliest level - e.g. 23.25 % instead of 24
-fix batching so its not split because of overlevel, calculate min level for doing batch
+add batch quest warning
+
+binary tree search for level based on exp? other optimizations
+allow split of batched quests - just consider them as separate quests
+
 save reason why certain step was made - eg prevent overleveling, reach next target monster, etc
 logic tests
 refactor

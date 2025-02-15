@@ -8,6 +8,7 @@ import {
   type RawExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
+import { numericallyAsc, sortByProp } from '@/lib/sort-by';
 import { OVERLEVEL_MAX_PERCENTAGE, OVERLEVEL_PROTECTION } from './constants';
 import { type MonsterId, monsters } from './monsters';
 
@@ -130,3 +131,16 @@ export const willOverlevel = (
     job: targetLevel.jobLvl > capLevelJob,
   };
 };
+
+export const getMonsterBaseLvlThresholds = (
+  monsterIds: ReadonlyArray<MonsterId>,
+): ReadonlyArray<[MonsterId, number]> =>
+  monsterIds
+    .map((monsterId) => monsters[monsterId])
+    .sort(
+      sortByProp({
+        select: (monster) => monster.prerequisite?.baseLevel ?? 1,
+        compare: numericallyAsc,
+      }),
+    )
+    .map((monster) => [monster.id, monster.prerequisite?.baseLevel ?? 1]);

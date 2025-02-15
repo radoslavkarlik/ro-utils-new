@@ -2,31 +2,31 @@ import {
   type ExpReward,
   calcMonsterCount,
   getLevelExpPoint,
+  getMonsterBaseLvlThresholds,
   getRawExpPoint,
   willOverlevel,
 } from '@/exp/calc';
-import {
-  EXP_QUEST_RATE,
-  OVERLEVEL_MAX_PERCENTAGE,
-  OVERLEVEL_PROTECTION,
-} from '@/exp/constants';
+import { EXP_QUEST_RATE } from '@/exp/constants';
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
-import { type Monster, MonsterId, monsters } from '@/exp/monsters';
+import { MonsterId, monsters } from '@/exp/monsters';
+import type { Monster } from '@/exp/monsters';
 import {
   type AdjustedQuest,
-  type ExpQuest,
   type ExpQuestWithMinLevel,
-  type MonsterQuest,
   QuestId,
+  getRewardsArray,
+  getTotalExpReward,
   isExpQuest,
   isExpQuestWithMinLevel,
   quests,
 } from '@/exp/quests';
 import type { Quest } from '@/exp/quests';
-import type {
-  ExpJourney,
-  ExpJourneyMonsterStep,
-  ExpJourneyStep,
+import {
+  type ExpJourneQuestStep,
+  type ExpJourney,
+  type ExpJourneyMonsterStep,
+  type ExpJourneyStep,
+  isMonsterExpJourneyStep,
 } from '@/exp/types/exp-journey';
 import {
   type ExpPoint,
@@ -34,7 +34,6 @@ import {
   type RawExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
-import { numericallyAsc, sortByProp } from '@/lib/sort-by';
 
 type Args = {
   readonly start: ExpPoint;
@@ -51,25 +50,42 @@ export const getExpJourney = ({
   finishedQuests,
   allowedQuests,
 }: Args): ExpJourney => {
+  const monsterBaseLvlThresholds = getMonsterBaseLvlThresholds(allowedMonsters);
+
   const adjustedQuests = Object.fromEntries(
     Object.entries(quests).map(([questId, quest]) => {
       if (!isExpQuest(quest)) {
         return [questId as QuestId, quest] as const;
       }
 
-      const questBaseExp = Math.floor(quest.base * EXP_QUEST_RATE);
-      const questJobExp = Math.floor(quest.job * EXP_QUEST_RATE);
-      const { baseLvl, jobLvl } = findMinimumLevelForExpReward({
-        base: questBaseExp,
-        job: questJobExp,
-      });
+      const rewards = getRewardsArray(quest.reward);
+
+      const rewardsWithRate = rewards.map<ExpReward>((reward) => ({
+        base: Math.floor(reward.base * EXP_QUEST_RATE),
+        job: Math.floor(reward.job * EXP_QUEST_RATE),
+      }));
+
+      const getMonster = (maxBaseLevel: number): Monster => {
+        const [monsterId] = monsterBaseLvlThresholds
+          .toReversed()
+          .find(([, baseLevel]) => baseLevel < maxBaseLevel)!;
+
+        return monsters[monsterId];
+      };
+
+      const { baseLvl, jobLvl } = findMinimumLevelForExpReward(
+        rewardsWithRate,
+        getMonster,
+      );
 
       return [
         questId as QuestId,
         {
           ...quest,
-          base: questBaseExp,
-          job: questJobExp,
+          reward:
+            rewardsWithRate.length === 1
+              ? rewardsWithRate[0]!
+              : rewardsWithRate,
           minRewardBaseLevel: baseLvl,
           minRewardJobLevel: jobLvl,
         } satisfies ExpQuestWithMinLevel,
@@ -91,24 +107,15 @@ export const getExpJourney = ({
         ]
       : [quest];
 
-  const buildFollowUpChain = (quest: Quest): ReadonlyArray<Quest> =>
-    quest.followUpQuest
-      ? [quest, ...buildFollowUpChain(quests[quest.followUpQuest])]
-      : [quest];
-
   const getAdjustedMinQuestLevel = (
     quest: ExpQuestWithMinLevel,
   ): LevelExpPoint => {
-    return new Set(
-      buildPrereqChain(quest)
-        .concat(buildFollowUpChain(quest))
-        .map((quest) => quest.id),
-    )
+    return new Set(buildPrereqChain(quest))
       .values()
       .toArray()
       .reduce<LevelExpPoint>(
-        (minLevels, id) => {
-          const associateQuest = adjustedQuests[id];
+        (minLevels, quest) => {
+          const associateQuest = adjustedQuests[quest.id];
 
           const minLevel = ((): LevelExpPoint => {
             if (isExpQuestWithMinLevel(associateQuest)) {
@@ -117,7 +124,10 @@ export const getExpJourney = ({
                   associateQuest.minRewardBaseLevel,
                   associateQuest.prerequisite?.baseLevel ?? 1,
                 ),
-                jobLvl: associateQuest.minRewardJobLevel,
+                jobLvl: Math.max(
+                  associateQuest.minRewardJobLevel,
+                  associateQuest.prerequisite?.jobLevel ?? 1,
+                ),
               };
             }
 
@@ -142,11 +152,12 @@ export const getExpJourney = ({
 
       if (isExpQuestWithMinLevel(quest)) {
         const { baseLvl, jobLvl } = getAdjustedMinQuestLevel(quest);
+        const rewards = getRewardsArray(quest.reward);
 
         return {
           id: questId,
-          baseExp: quest.base,
-          jobExp: quest.job,
+          rewards,
+          totalReward: getTotalExpReward(rewards),
           minBaseLvl: baseLvl,
           minJobLvl: jobLvl,
           questPrerequisites: quest.prerequisite?.questIds,
@@ -157,26 +168,13 @@ export const getExpJourney = ({
 
       return {
         id: questId,
+        totalReward: { base: 0, job: 0 } satisfies ExpReward,
         minBaseLvl: monster.prerequisite?.baseLevel ?? 1,
-        baseExp: 0,
-        jobExp: 0,
         minJobLvl: 1,
         monsterPrerequisites: quest.kills,
       } as const;
     })
     .toArray();
-
-  const monsterBaseLvlThresholds = allowedMonsters
-    .map((monsterId) => monsters[monsterId])
-    .sort(
-      sortByProp({
-        select: (monster) => monster.prerequisite?.baseLevel ?? 1,
-        compare: numericallyAsc,
-      }),
-    )
-    .map(
-      (monster) => [monster.id, monster.prerequisite?.baseLevel ?? 1] as const,
-    );
 
   let expRaw = isRawExpPoint(start) ? start : getRawExpPoint(start);
   let expLevel = isRawExpPoint(start) ? getLevelExpPoint(start) : start;
@@ -195,7 +193,29 @@ export const getExpJourney = ({
   let monsterIndex = 0;
   let [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
 
-  let steps: ReadonlyArray<ExpJourneyStep> = [];
+  const steps: Array<ExpJourneyStep> = [];
+
+  const addMonsterStep = (step: ExpJourneyMonsterStep): void => {
+    const lastStep = steps[steps.length - 1];
+
+    if (
+      lastStep &&
+      isMonsterExpJourneyStep(lastStep) &&
+      lastStep.monsterId === step.monsterId
+    ) {
+      steps.pop();
+      steps.push({
+        ...step,
+        count: lastStep.count + step.count,
+      });
+    } else {
+      steps.push(step);
+    }
+  };
+
+  const addQuestStep = (step: ExpJourneQuestStep): void => {
+    steps.push(step);
+  };
 
   const killMonsters = (target: ExpPoint) => {
     const [count, newExpPoint] = calcMonsterCount(expRaw, target, monsterId);
@@ -205,7 +225,7 @@ export const getExpJourney = ({
       jobExp: newExpPoint.jobExp,
     });
 
-    steps = [...steps, { monsterId, count, expPoint: expLevel }];
+    addMonsterStep({ monsterId, count, expPoint: expLevel });
   };
 
   const getExpFromMonsters = (target: ExpPoint): void => {
@@ -216,6 +236,7 @@ export const getExpJourney = ({
       if (nextMonsterThreshold <= expLevel.baseLvl) {
         monsterIndex++;
         [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
+
         getExpFromMonsters(target);
         return;
       }
@@ -269,32 +290,46 @@ export const getExpJourney = ({
         jobExp: monster.job * count,
       });
     } else {
-      do {
+      if (quest.rewards.length === 1) {
         const { base: overleveledBase, job: overleveledJob } = willOverlevel(
           expRaw,
-          { base: quest.baseExp, job: quest.jobExp },
+          {
+            base: quest.totalReward.base,
+            job: quest.totalReward.job,
+          },
         );
 
-        if (!overleveledBase && !overleveledJob) {
-          break;
+        if (overleveledBase || overleveledJob) {
+          const targetLevel: LevelExpPoint = {
+            baseLvl: overleveledBase ? Math.floor(expLevel.baseLvl) + 1 : 1,
+            jobLvl: overleveledJob ? Math.floor(expLevel.jobLvl) + 1 : 1,
+          };
+
+          getExpFromMonsters(targetLevel);
         }
-
-        const targetLevel: LevelExpPoint = {
-          baseLvl: overleveledBase ? Math.floor(expLevel.baseLvl) + 1 : 1,
-          jobLvl: overleveledJob ? Math.floor(expLevel.jobLvl) + 1 : 1,
-        };
-
-        getExpFromMonsters(targetLevel);
-      } while (true);
-
-      applyExp({
-        baseExp: quest.baseExp,
-        jobExp: quest.jobExp,
-      });
+      } else {
+        // check if it is not going to overlevel after all
+        const targetLevel = findMinimumLevelForExpReward(
+          quest.rewards,
+          () => monsters[monsterId],
+          expRaw,
+        );
+        if (
+          targetLevel.baseLvl > expLevel.baseLvl ||
+          targetLevel.jobLvl < expLevel.jobLvl
+        ) {
+          getExpFromMonsters(targetLevel);
+        }
+      }
     }
 
+    applyExp({
+      baseExp: quest.totalReward.base,
+      jobExp: quest.totalReward.job,
+    });
+
     questsToDo = questsToDo.filter((questToDo) => questToDo.id !== quest.id);
-    steps = [...steps, { questId: quest.id, expPoint: expLevel }];
+    addQuestStep({ questId: quest.id, expPoint: expLevel });
   };
 
   const getQuestToDo = () => {
@@ -339,22 +374,24 @@ export const getExpJourney = ({
         return count1 - count2;
       }
 
-      if (quest1.jobExp && !quest2.jobExp) {
+      if (quest1.totalReward.job && !quest2.totalReward.job) {
         return 1;
       }
 
-      if (!quest1.jobExp && quest2.jobExp) {
+      if (!quest1.totalReward.job && quest2.totalReward.job) {
         return -1;
       }
 
-      if (!quest1.jobExp && !quest2.jobExp) {
+      if (!quest1.totalReward.job && !quest2.totalReward.job) {
         const minBase = Math.sign(quest1.minBaseLvl - quest2.minBaseLvl);
 
         if (minBase) {
           return minBase;
         }
 
-        const baseExp = Math.sign(quest1.baseExp - quest2.baseExp);
+        const baseExp = Math.sign(
+          quest1.totalReward.base - quest2.totalReward.base,
+        );
 
         if (baseExp) {
           return baseExp;
@@ -367,7 +404,7 @@ export const getExpJourney = ({
         return minJob;
       }
 
-      return Math.sign(quest1.jobExp - quest2.jobExp);
+      return Math.sign(quest1.totalReward.job - quest2.totalReward.job);
     })[0];
   };
 

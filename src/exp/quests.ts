@@ -2,9 +2,7 @@ import type { ExpReward } from './calc';
 import { MonsterId } from './monsters';
 
 export enum QuestId {
-  AcolyteTraining1 = 'AcolyteTraining1',
-  AcolyteTraining2 = 'AcolyteTraining2',
-  AcolyteTraining3 = 'AcolyteTraining3',
+  AcolyteTraining = 'AcolyteTraining',
   Friendship1 = 'Friendship1',
   Friendship2 = 'Friendship2',
   Bruspetti = 'Bruspetti',
@@ -19,13 +17,14 @@ export enum QuestId {
 
 export type QuestPrerequisite = {
   readonly baseLevel?: number;
+  readonly jobLevel?: number;
   readonly questIds?: ReadonlyArray<QuestId>;
 };
 
-export type ExpQuest = ExpReward & {
+export type ExpQuest = {
   readonly id: QuestId;
-  readonly followUpQuest?: QuestId;
   readonly prerequisite?: QuestPrerequisite;
+  readonly reward: ExpReward | ReadonlyArray<ExpReward>;
 };
 
 export type ExpQuestWithMinLevel = ExpQuest & {
@@ -54,53 +53,53 @@ export const isExpQuestWithMinLevel = (
 ): quest is ExpQuestWithMinLevel => 'minRewardBaseLevel' in quest;
 
 export const quests: Record<QuestId, Quest> = {
-  [QuestId.AcolyteTraining1]: {
-    id: QuestId.AcolyteTraining1,
-    base: 2_000,
-    job: 2_000,
-    followUpQuest: QuestId.AcolyteTraining2,
-  },
-  [QuestId.AcolyteTraining2]: {
-    id: QuestId.AcolyteTraining2,
-    base: 0,
-    job: 1_000,
-    prerequisite: { questIds: [QuestId.AcolyteTraining1] },
-    followUpQuest: QuestId.AcolyteTraining3,
-  },
-  [QuestId.AcolyteTraining3]: {
-    id: QuestId.AcolyteTraining3,
-    base: 5_000,
-    job: 3_000,
-    prerequisite: { questIds: [QuestId.AcolyteTraining2] },
+  [QuestId.AcolyteTraining]: {
+    id: QuestId.AcolyteTraining,
+    reward: [
+      { base: 2_000, job: 2_000 },
+      { base: 0, job: 1_000 },
+      { base: 5_000, job: 3_000 },
+    ],
+    prerequisite: { jobLevel: 17 },
   },
   [QuestId.Friendship1]: {
     id: QuestId.Friendship1,
-    base: 200_000,
-    job: 0,
+    reward: {
+      base: 200_000,
+      job: 0,
+    },
     prerequisite: { baseLevel: 50 },
   },
   [QuestId.Friendship2]: {
     id: QuestId.Friendship2,
-    base: 200_000,
-    job: 0,
+    reward: {
+      base: 200_000,
+      job: 0,
+    },
     prerequisite: { baseLevel: 50, questIds: [QuestId.Friendship1] },
   },
   [QuestId.Bruspetti]: {
     id: QuestId.Bruspetti,
-    base: 450_000,
-    job: 0,
+    reward: {
+      base: 450_000,
+      job: 0,
+    },
     prerequisite: { baseLevel: 50, questIds: [QuestId.Friendship2] },
   },
   [QuestId.LostChild]: {
     id: QuestId.LostChild,
-    base: 900_000,
-    job: 0,
+    reward: {
+      base: 900_000,
+      job: 0,
+    },
     prerequisite: { baseLevel: 60 },
   },
   [QuestId.RachelSanctuary1]: {
     id: QuestId.RachelSanctuary1,
-    base: 200_000,
-    job: 0,
+    reward: {
+      base: 200_000,
+      job: 0,
+    },
     prerequisite: { baseLevel: 60, questIds: [QuestId.LostChild] },
   },
   [QuestId.RachelSanctuarySiroma]: {
@@ -112,8 +111,10 @@ export const quests: Record<QuestId, Quest> = {
   },
   [QuestId.RachelSanctuary2]: {
     id: QuestId.RachelSanctuary2,
-    base: 900_000,
-    job: 600_000,
+    reward: {
+      base: 900_000,
+      job: 600_000,
+    },
     prerequisite: {
       baseLevel: 60,
       questIds: [QuestId.RachelSanctuary1, QuestId.RachelSanctuarySiroma],
@@ -121,20 +122,41 @@ export const quests: Record<QuestId, Quest> = {
   },
   [QuestId.EyeOfHellion]: {
     id: QuestId.EyeOfHellion,
-    base: 1_000_000,
-    job: 0,
+    reward: {
+      base: 1_000_000,
+      job: 0,
+    },
     prerequisite: { baseLevel: 60 },
   },
   [QuestId.CurseOfGaebolg]: {
     id: QuestId.CurseOfGaebolg,
-    base: 1_600_000,
-    job: 0,
+    reward: {
+      base: 1_600_000,
+      job: 0,
+    },
     prerequisite: { baseLevel: 60 },
   },
   [QuestId.CrowOfDestiny]: {
     id: QuestId.CrowOfDestiny,
-    base: 900_000,
-    job: 900_000,
+    reward: {
+      base: 900_000,
+      job: 900_000,
+    },
     prerequisite: { baseLevel: 60 },
   },
 };
+
+export const getRewardsArray = (
+  reward: ExpReward | ReadonlyArray<ExpReward>,
+): ReadonlyArray<ExpReward> => (Array.isArray(reward) ? reward : [reward]);
+
+export const getTotalExpReward = (
+  rewards: ReadonlyArray<ExpReward>,
+): ExpReward =>
+  rewards.reduce<ExpReward>(
+    (total, reward) => ({
+      base: total.base + reward.base,
+      job: total.job + reward.job,
+    }),
+    { base: 0, job: 0 },
+  );
