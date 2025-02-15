@@ -1,19 +1,6 @@
+import { MonsterId } from '@/exp/types/monster-id';
+import { QuestId } from '@/exp/types/quest-id';
 import type { ExpReward } from './calc';
-import { MonsterId } from './monsters';
-
-export enum QuestId {
-  AcolyteTraining = 'AcolyteTraining',
-  Friendship1 = 'Friendship1',
-  Friendship2 = 'Friendship2',
-  Bruspetti = 'Bruspetti',
-  LostChild = 'LostChild',
-  RachelSanctuary1 = 'RachelSanctuary1',
-  RachelSanctuarySiroma = 'RachelSanctuarySiroma',
-  RachelSanctuary2 = 'RachelSanctuary2',
-  EyeOfHellion = 'EyeOfHellion',
-  CurseOfGaebolg = 'CurseOfGaebolg',
-  CrowOfDestiny = 'CrowOfDestiny',
-}
 
 export type QuestPrerequisite = {
   readonly baseLevel?: number;

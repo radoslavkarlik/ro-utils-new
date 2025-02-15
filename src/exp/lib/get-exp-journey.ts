@@ -8,12 +8,11 @@ import {
 } from '@/exp/calc';
 import { EXP_QUEST_RATE } from '@/exp/constants';
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
-import { MonsterId, monsters } from '@/exp/monsters';
+import { monsters } from '@/exp/monsters';
 import type { Monster } from '@/exp/monsters';
 import {
   type AdjustedQuest,
   type ExpQuestWithMinLevel,
-  QuestId,
   getRewardsArray,
   getTotalExpReward,
   isExpQuest,
@@ -34,6 +33,8 @@ import {
   type RawExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
+import { MonsterId } from '@/exp/types/monster-id';
+import { QuestId } from '@/exp/types/quest-id';
 
 type Args = {
   readonly start: ExpPoint;
@@ -230,8 +231,21 @@ export const getExpJourney = ({
 
   const getExpFromMonsters = (target: ExpPoint): void => {
     if (monsterBaseLvlThresholds.length - 1 > monsterIndex) {
-      const [, nextMonsterThreshold] =
+      const [nextMonsterId, nextMonsterThreshold] =
         monsterBaseLvlThresholds[monsterIndex + 1]!;
+
+      const nextMonster = monsters[nextMonsterId];
+      const nextMonsterQuestId = nextMonster.prerequisite?.questId;
+
+      if (
+        nextMonsterQuestId &&
+        allowedQuests.includes(nextMonsterQuestId) &&
+        questsToDo.find((questToDo) => questToDo.id === nextMonsterQuestId)
+      ) {
+        // did not complete the quest
+        killMonsters(target);
+        return;
+      }
 
       if (nextMonsterThreshold <= expLevel.baseLvl) {
         monsterIndex++;

@@ -1,15 +1,10 @@
+import { MonsterId } from '@/exp/types/monster-id';
+import { QuestId } from '@/exp/types/quest-id';
 import type { ExpReward } from './calc';
-
-export enum MonsterId {
-  Spore = '1014',
-  Muka = '1055',
-  Wolf = '1013',
-  Metaling = '1613',
-  Siroma = '1776',
-}
 
 type MonsterPrerequisite = {
   readonly baseLevel?: number;
+  readonly questId?: QuestId;
 };
 
 export type Monster = ExpReward & {
@@ -23,7 +18,7 @@ export const monsters: Record<MonsterId, Monster> = {
     id: MonsterId.Muka,
     base: 273,
     job: 120,
-    prerequisite: { baseLevel: 26 },
+    prerequisite: { baseLevel: 26, questId: QuestId.AcolyteTraining },
   },
   [MonsterId.Wolf]: {
     id: MonsterId.Wolf,

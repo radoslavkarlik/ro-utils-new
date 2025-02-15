@@ -1,3 +1,5 @@
+test journey from a fixed point.. e.g. for checking progress and overlevel from that one
+
 add batch quest warning
 
 binary tree search for level based on exp? other optimizations
