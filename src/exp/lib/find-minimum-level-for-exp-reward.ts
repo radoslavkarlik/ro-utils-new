@@ -2,55 +2,59 @@ import baseExpChart from '@/data/base-exp-chart.json' with { type: 'json' };
 import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
   type: 'json',
 };
-import type { ExpReward } from '@/exp/calc';
-import {
-  OVERLEVEL_MAX_PERCENTAGE,
-  OVERLEVEL_PROTECTION,
-} from '@/exp/constants';
+import { type ExpReward, willOverlevel } from '@/exp/calc';
+import { OVERLEVEL_PROTECTION } from '@/exp/constants';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
 
 export const findMinimumLevelForExpReward = (
-  reward: ExpReward,
+  reward: ExpReward | ReadonlyArray<ExpReward>,
 ): LevelExpPoint => {
   if (!OVERLEVEL_PROTECTION) {
     return {
-      baseLvl: 0,
-      jobLvl: 0,
+      baseLvl: 1,
+      jobLvl: 1,
     };
   }
 
+  const rewards: ReadonlyArray<ExpReward> = Array.isArray(reward)
+    ? reward
+    : [reward];
+
   const overlevelMinBase = ((): number => {
-    let level1Exp = 0;
-    let level2Exp = 0;
+    let totalExp = 0;
 
-    for (const [bLvl, baseExp] of Object.entries(baseExpChart)) {
-      level1Exp = level2Exp;
-      level2Exp = baseExp.expToNextLevel;
+    levelLoop: for (const [bLvl, baseExp] of Object.entries(baseExpChart)) {
+      totalExp = baseExp.totalExp;
 
-      const level2ExpCut = level2Exp * (OVERLEVEL_MAX_PERCENTAGE / 100);
-      const totalExp = level1Exp + level2ExpCut;
+      for (const reward of rewards) {
+        if (willOverlevel({ baseExp: totalExp, jobExp: 0 }, reward).base) {
+          continue levelLoop;
+        }
 
-      if (totalExp >= reward.base) {
-        return +bLvl - 1;
+        totalExp += reward.base;
       }
+
+      return +bLvl;
     }
 
     return Number.POSITIVE_INFINITY;
   })();
 
   const overlevelMinJob = ((): number => {
-    let level1Exp = 0;
-    let level2Exp = 0;
+    let totalExp = 0;
 
-    for (const [jLvl, jobExp] of Object.entries(jobExpChart)) {
-      level1Exp = level2Exp;
-      level2Exp = jobExp.expToNextLevel;
-      const level2ExpCut = level2Exp * (OVERLEVEL_MAX_PERCENTAGE / 100);
-      const totalExp = level1Exp + level2ExpCut;
+    levelLoop: for (const [jLvl, jobExp] of Object.entries(jobExpChart)) {
+      totalExp = jobExp.totalExp;
 
-      if (totalExp >= reward.job) {
-        return +jLvl - 1;
+      for (const reward of rewards) {
+        if (willOverlevel({ baseExp: 0, jobExp: totalExp }, reward).job) {
+          continue levelLoop;
+        }
+
+        totalExp += reward.job;
       }
+
+      return +jLvl;
     }
 
     return Number.POSITIVE_INFINITY;

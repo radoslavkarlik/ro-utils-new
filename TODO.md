@@ -8,3 +8,4 @@ better global flags handling - rates etc
 choose correctly dataset baseexp, jobexp
 choose monsters from db
 quests from db?
+functions for base and job separately cause often it uses explicitely one param as 0 and uses only result for one param

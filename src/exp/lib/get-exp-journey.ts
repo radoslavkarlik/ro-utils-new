@@ -115,7 +115,7 @@ export const getExpJourney = ({
               return {
                 baseLvl: Math.max(
                   associateQuest.minRewardBaseLevel,
-                  associateQuest.prerequisite?.baseLevel ?? 0,
+                  associateQuest.prerequisite?.baseLevel ?? 1,
                 ),
                 jobLvl: associateQuest.minRewardJobLevel,
               };
@@ -123,7 +123,7 @@ export const getExpJourney = ({
 
             const monster = monsters[associateQuest.kills.monsterId];
 
-            return { baseLvl: monster.prerequisite?.baseLevel ?? 0, jobLvl: 0 };
+            return { baseLvl: monster.prerequisite?.baseLevel ?? 1, jobLvl: 1 };
           })();
 
           return {
@@ -131,7 +131,7 @@ export const getExpJourney = ({
             jobLvl: Math.max(minLevels.jobLvl, minLevel.jobLvl),
           };
         },
-        { baseLvl: 0, jobLvl: 0 },
+        { baseLvl: 1, jobLvl: 1 },
       );
   };
 
@@ -157,10 +157,10 @@ export const getExpJourney = ({
 
       return {
         id: questId,
-        minBaseLvl: monster.prerequisite?.baseLevel ?? 0,
+        minBaseLvl: monster.prerequisite?.baseLevel ?? 1,
         baseExp: 0,
         jobExp: 0,
-        minJobLvl: 0,
+        minJobLvl: 1,
         monsterPrerequisites: quest.kills,
       } as const;
     })
@@ -170,12 +170,12 @@ export const getExpJourney = ({
     .map((monsterId) => monsters[monsterId])
     .sort(
       sortByProp({
-        select: (monster) => monster.prerequisite?.baseLevel ?? 0,
+        select: (monster) => monster.prerequisite?.baseLevel ?? 1,
         compare: numericallyAsc,
       }),
     )
     .map(
-      (monster) => [monster.id, monster.prerequisite?.baseLevel ?? 0] as const,
+      (monster) => [monster.id, monster.prerequisite?.baseLevel ?? 1] as const,
     );
 
   let expRaw = isRawExpPoint(start) ? start : getRawExpPoint(start);
@@ -225,12 +225,12 @@ export const getExpJourney = ({
         : target;
 
       if (nextMonsterThreshold < targetLevel.baseLvl) {
-        killMonsters({ baseLvl: nextMonsterThreshold, jobLvl: 0 });
+        killMonsters({ baseLvl: nextMonsterThreshold, jobLvl: 1 });
 
         monsterIndex++;
         [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
       } else if (nextMonsterThreshold === targetLevel.baseLvl) {
-        killMonsters({ baseLvl: nextMonsterThreshold, jobLvl: 0 });
+        killMonsters({ baseLvl: nextMonsterThreshold, jobLvl: 1 });
 
         monsterIndex++;
         [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
@@ -280,8 +280,8 @@ export const getExpJourney = ({
         }
 
         const targetLevel: LevelExpPoint = {
-          baseLvl: overleveledBase ? Math.floor(expLevel.baseLvl) + 1 : 0,
-          jobLvl: overleveledJob ? Math.floor(expLevel.jobLvl) + 1 : 0,
+          baseLvl: overleveledBase ? Math.floor(expLevel.baseLvl) + 1 : 1,
+          jobLvl: overleveledJob ? Math.floor(expLevel.jobLvl) + 1 : 1,
         };
 
         getExpFromMonsters(targetLevel);
@@ -385,8 +385,8 @@ export const getExpJourney = ({
 };
 
 const steps = getExpJourney({
-  start: { baseLvl: 11, jobLvl: 0 },
-  target: { jobLvl: 50, baseLvl: 0 },
+  start: { baseLvl: 11, jobLvl: 1 },
+  target: { jobLvl: 50, baseLvl: 1 },
   allowedQuests: Object.values(QuestId),
   finishedQuests: [],
   allowedMonsters: [

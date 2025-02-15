@@ -16,7 +16,7 @@ export type ExpReward = {
   readonly job: number;
 };
 
-const emptyExpEntry = [0, { totalExp: 0, expToNextLevel: 0 }] as const;
+const emptyExpEntry = [1, { totalExp: 0, expToNextLevel: 0 }] as const;
 
 export const getRawExpPoint = (point: LevelExpPoint): RawExpPoint => {
   const baseLevel = Math.floor(point.baseLvl);
