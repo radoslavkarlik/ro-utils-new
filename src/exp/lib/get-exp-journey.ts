@@ -2,11 +2,12 @@ import {
   type ExpReward,
   calcMonsterCount,
   getLevelExpPoint,
+  getMaxLevelAfterAppliedReward,
   getMonsterBaseLvlThresholds,
   getRawExpPoint,
   willOverlevel,
 } from '@/exp/calc';
-import { EXP_QUEST_RATE } from '@/exp/constants';
+import { EXP_QUEST_RATE, OVERLEVEL_PROTECTION } from '@/exp/constants';
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
 import { monsters } from '@/exp/monsters';
 import type { Monster } from '@/exp/monsters';
@@ -30,7 +31,6 @@ import {
 import {
   type ExpPoint,
   type LevelExpPoint,
-  type RawExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
 import { MonsterId } from '@/exp/types/monster-id';
@@ -180,13 +180,32 @@ export const getExpJourney = ({
   let expRaw = isRawExpPoint(start) ? start : getRawExpPoint(start);
   let expLevel = isRawExpPoint(start) ? getLevelExpPoint(start) : start;
 
-  const applyExp = (exp: RawExpPoint): void => {
+  const applyExp = (reward: ExpReward, checkOverLevel?: boolean): void => {
+    // TODO optimize, calculation is done in willOverflow already for quests, so it can return how much to add max if we decided to allow lost exp due to max level anyway
+    const { baseLvl: capLevelBase, jobLvl: capLevelJob } =
+      getMaxLevelAfterAppliedReward(expLevel);
+
     expRaw = {
-      baseExp: expRaw.baseExp + exp.baseExp,
-      jobExp: expRaw.jobExp + exp.jobExp,
+      baseExp: expRaw.baseExp + reward.base,
+      jobExp: expRaw.jobExp + reward.job,
     };
 
     expLevel = getLevelExpPoint(expRaw);
+
+    if (!OVERLEVEL_PROTECTION || !checkOverLevel) {
+      return;
+    }
+
+    if (expLevel.baseLvl <= capLevelBase && expLevel.jobLvl <= capLevelJob) {
+      return;
+    }
+
+    expLevel = {
+      baseLvl: Math.min(expLevel.baseLvl, capLevelBase),
+      jobLvl: Math.min(expLevel.jobLvl, capLevelJob),
+    };
+
+    expRaw = getRawExpPoint(expLevel);
   };
 
   const targetRaw = isRawExpPoint(target) ? target : getRawExpPoint(target);
@@ -222,8 +241,8 @@ export const getExpJourney = ({
     const [count, newExpPoint] = calcMonsterCount(expRaw, target, monsterId);
 
     applyExp({
-      baseExp: newExpPoint.baseExp,
-      jobExp: newExpPoint.jobExp,
+      base: newExpPoint.baseExp,
+      job: newExpPoint.jobExp,
     });
 
     addMonsterStep({ monsterId, count, expPoint: expLevel });
@@ -295,23 +314,29 @@ export const getExpJourney = ({
       getExpFromMonsters(questMinLevel);
     }
 
+    // TODO refactor lol
+    let checkOverLevel = false;
+
     if (quest.monsterPrerequisites) {
       const { monsterId, count } = quest.monsterPrerequisites;
       const monster = monsters[monsterId];
 
       applyExp({
-        baseExp: monster.base * count,
-        jobExp: monster.job * count,
+        base: monster.base * count,
+        job: monster.job * count,
       });
     } else {
       if (quest.rewards.length === 1) {
-        const { base: overleveledBase, job: overleveledJob } = willOverlevel(
-          expRaw,
-          {
-            base: quest.totalReward.base,
-            job: quest.totalReward.job,
-          },
-        );
+        const {
+          base: overleveledBase,
+          job: overleveledJob,
+          checkOverLevel: _checkOverLevel,
+        } = willOverlevel(expRaw, {
+          base: quest.totalReward.base,
+          job: quest.totalReward.job,
+        });
+
+        checkOverLevel = _checkOverLevel;
 
         if (overleveledBase || overleveledJob) {
           const targetLevel: LevelExpPoint = {
@@ -337,10 +362,13 @@ export const getExpJourney = ({
       }
     }
 
-    applyExp({
-      baseExp: quest.totalReward.base,
-      jobExp: quest.totalReward.job,
-    });
+    applyExp(
+      {
+        base: quest.totalReward.base,
+        job: quest.totalReward.job,
+      },
+      checkOverLevel,
+    );
 
     questsToDo = questsToDo.filter((questToDo) => questToDo.id !== quest.id);
     addQuestStep({ questId: quest.id, expPoint: expLevel });
@@ -442,7 +470,7 @@ const steps = getExpJourney({
   finishedQuests: [],
   allowedMonsters: [
     MonsterId.Spore,
-    MonsterId.Metaling,
+    // MonsterId.Metaling,
     MonsterId.Muka,
     MonsterId.Wolf,
   ],

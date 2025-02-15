@@ -8,9 +8,13 @@ import {
   type RawExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
+import type { MonsterId } from '@/exp/types/monster-id';
 import { numericallyAsc, sortByProp } from '@/lib/sort-by';
 import { OVERLEVEL_MAX_PERCENTAGE, OVERLEVEL_PROTECTION } from './constants';
-import { type MonsterId, monsters } from './monsters';
+import { monsters } from './monsters';
+
+const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
+const maxJobLevel = Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
 
 export type ExpReward = {
   readonly base: number;
@@ -103,12 +107,30 @@ export const calcMonsterCount = (
   ];
 };
 
+export const getMaxLevelAfterAppliedReward = (
+  start: LevelExpPoint,
+): LevelExpPoint => {
+  const overlevel = OVERLEVEL_MAX_PERCENTAGE / 100 + 1;
+
+  const capLevelBase = Math.floor(start.baseLvl) + overlevel;
+  const capLevelJob = Math.floor(start.jobLvl) + overlevel;
+
+  return {
+    baseLvl: capLevelBase,
+    jobLvl: capLevelJob,
+  };
+};
+
 export const willOverlevel = (
   expPoint: ExpPoint,
   expReward: ExpReward,
-): { readonly base: boolean; readonly job: boolean } => {
+): {
+  readonly base: boolean;
+  readonly job: boolean;
+  checkOverLevel: boolean;
+} => {
   if (!OVERLEVEL_PROTECTION) {
-    return { base: false, job: false };
+    return { base: false, job: false, checkOverLevel: false };
   }
 
   const [expRaw, expLevel] = isRawExpPoint(expPoint)
@@ -120,15 +142,20 @@ export const willOverlevel = (
     jobExp: expRaw.jobExp + expReward.job,
   };
 
-  const overlevel = OVERLEVEL_MAX_PERCENTAGE / 100 + 1;
-
   const targetLevel = getLevelExpPoint(targetExp);
-  const capLevelBase = Math.floor(expLevel.baseLvl) + overlevel;
-  const capLevelJob = Math.floor(expLevel.jobLvl) + overlevel;
 
+  const { baseLvl: capLevelBase, jobLvl: capLevelJob } =
+    getMaxLevelAfterAppliedReward(expLevel);
+
+  // TODO log exp was wasted but hit max job level
   return {
-    base: targetLevel.baseLvl > capLevelBase,
-    job: targetLevel.jobLvl > capLevelJob,
+    base:
+      targetLevel.baseLvl !== maxBaseLevel &&
+      targetLevel.baseLvl > capLevelBase,
+    job: targetLevel.jobLvl !== maxJobLevel && targetLevel.jobLvl > capLevelJob,
+    checkOverLevel:
+      targetLevel.baseLvl === maxBaseLevel ||
+      targetLevel.jobLvl === maxJobLevel,
   };
 };
 
