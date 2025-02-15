@@ -30,7 +30,7 @@ export const findMinimumLevelForExpReward = (
       const level2ExpCut = level2Exp * (OVERLEVEL_MAX_PERCENTAGE / 100);
       const totalExp = level1Exp + level2ExpCut;
 
-      if (totalExp > reward.base) {
+      if (totalExp >= reward.base) {
         return +bLvl - 1;
       }
     }
@@ -48,7 +48,7 @@ export const findMinimumLevelForExpReward = (
       const level2ExpCut = level2Exp * (OVERLEVEL_MAX_PERCENTAGE / 100);
       const totalExp = level1Exp + level2ExpCut;
 
-      if (totalExp > reward.job) {
+      if (totalExp >= reward.job) {
         return +jLvl - 1;
       }
     }
