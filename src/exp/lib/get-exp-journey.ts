@@ -348,14 +348,16 @@ export const getExpJourney = ({
         }
       } else {
         // check if it is not going to overlevel after all
+        // TODO can this result unnecessary level up due to overlevel at max job level?
         const targetLevel = findMinimumLevelForExpReward(
           quest.rewards,
           () => monsters[monsterId],
           expRaw,
         );
+
         if (
           targetLevel.baseLvl > expLevel.baseLvl ||
-          targetLevel.jobLvl < expLevel.jobLvl
+          targetLevel.jobLvl > expLevel.jobLvl
         ) {
           getExpFromMonsters(targetLevel);
         }
@@ -379,75 +381,79 @@ export const getExpJourney = ({
       return null;
     }
 
-    return questsToDo.toSorted((quest1, quest2) => {
-      if (quest1.questPrerequisites?.includes(quest2.id)) {
-        return 1;
-      }
-
-      if (quest2.questPrerequisites?.includes(quest1.id)) {
-        return -1;
-      }
-
-      const req1: LevelExpPoint = {
-        baseLvl: quest1.minBaseLvl,
-        jobLvl: quest1.minJobLvl,
-      };
-
-      const req2: LevelExpPoint = {
-        baseLvl: quest2.minBaseLvl,
-        jobLvl: quest2.minJobLvl,
-      };
-
-      const meets1 = meetsLevelRequirements(req1);
-      const meets2 = meetsLevelRequirements(req2);
-
-      if (meets1 && !meets2) {
-        return -1;
-      }
-
-      if (meets2 && !meets1) {
-        return 1;
-      }
-
-      if (!meets1 && !meets2) {
-        const [count1] = calcMonsterCount(expRaw, req1, monsterId);
-        const [count2] = calcMonsterCount(expRaw, req2, monsterId);
-
-        return count1 - count2;
-      }
-
-      if (quest1.totalReward.job && !quest2.totalReward.job) {
-        return 1;
-      }
-
-      if (!quest1.totalReward.job && quest2.totalReward.job) {
-        return -1;
-      }
-
-      if (!quest1.totalReward.job && !quest2.totalReward.job) {
-        const minBase = Math.sign(quest1.minBaseLvl - quest2.minBaseLvl);
-
-        if (minBase) {
-          return minBase;
+    const sortedQuestsToDoFromCurrentExp = questsToDo.toSorted(
+      (quest1, quest2) => {
+        if (quest1.questPrerequisites?.includes(quest2.id)) {
+          return 1;
         }
 
-        const baseExp = Math.sign(
-          quest1.totalReward.base - quest2.totalReward.base,
-        );
-
-        if (baseExp) {
-          return baseExp;
+        if (quest2.questPrerequisites?.includes(quest1.id)) {
+          return -1;
         }
-      }
 
-      const minJob = Math.sign(quest1.minJobLvl - quest2.minJobLvl);
+        const req1: LevelExpPoint = {
+          baseLvl: quest1.minBaseLvl,
+          jobLvl: quest1.minJobLvl,
+        };
 
-      if (minJob) {
-        return minJob;
-      }
+        const req2: LevelExpPoint = {
+          baseLvl: quest2.minBaseLvl,
+          jobLvl: quest2.minJobLvl,
+        };
 
-      return Math.sign(quest1.totalReward.job - quest2.totalReward.job);
-    })[0];
+        const meets1 = meetsLevelRequirements(req1);
+        const meets2 = meetsLevelRequirements(req2);
+
+        if (meets1 && !meets2) {
+          return -1;
+        }
+
+        if (meets2 && !meets1) {
+          return 1;
+        }
+
+        if (!meets1 && !meets2) {
+          const [count1] = calcMonsterCount(expRaw, req1, monsterId);
+          const [count2] = calcMonsterCount(expRaw, req2, monsterId);
+
+          return count1 - count2;
+        }
+
+        if (quest1.totalReward.job && !quest2.totalReward.job) {
+          return 1;
+        }
+
+        if (!quest1.totalReward.job && quest2.totalReward.job) {
+          return -1;
+        }
+
+        if (!quest1.totalReward.job && !quest2.totalReward.job) {
+          const minBase = Math.sign(quest1.minBaseLvl - quest2.minBaseLvl);
+
+          if (minBase) {
+            return minBase;
+          }
+
+          const baseExp = Math.sign(
+            quest1.totalReward.base - quest2.totalReward.base,
+          );
+
+          if (baseExp) {
+            return baseExp;
+          }
+        }
+
+        const minJob = Math.sign(quest1.minJobLvl - quest2.minJobLvl);
+
+        if (minJob) {
+          return minJob;
+        }
+
+        return Math.sign(quest1.totalReward.job - quest2.totalReward.job);
+      },
+    );
+
+    return sortedQuestsToDoFromCurrentExp[0];
   };
 
   while (!meetsLevelRequirements(targetRaw)) {
@@ -463,11 +469,28 @@ export const getExpJourney = ({
   return steps;
 };
 
+// const steps = getExpJourney({
+//   start: { baseLvl: 11, jobLvl: 1 },
+//   target: { jobLvl: 50, baseLvl: 1 },
+//   allowedQuests: Object.values(QuestId),
+//   finishedQuests: [],
+//   allowedMonsters: [
+//     MonsterId.Spore,
+//     // MonsterId.Metaling,
+//     MonsterId.Muka,
+//     MonsterId.Wolf,
+//   ],
+// });
+
 const steps = getExpJourney({
-  start: { baseLvl: 11, jobLvl: 1 },
+  start: { baseLvl: 62.487, jobLvl: 44.182 },
   target: { jobLvl: 50, baseLvl: 1 },
   allowedQuests: Object.values(QuestId),
-  finishedQuests: [],
+  finishedQuests: [
+    QuestId.AcolyteTraining,
+    QuestId.Friendship,
+    QuestId.Bruspetti,
+  ],
   allowedMonsters: [
     MonsterId.Spore,
     // MonsterId.Metaling,
