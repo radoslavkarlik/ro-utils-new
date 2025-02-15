@@ -224,11 +224,18 @@ export const getExpJourney = ({
         ? getLevelExpPoint(target)
         : target;
 
-      if (nextMonsterThreshold <= targetLevel.baseLvl) {
+      if (nextMonsterThreshold < targetLevel.baseLvl) {
         killMonsters({ baseLvl: nextMonsterThreshold, jobLvl: 0 });
 
         monsterIndex++;
         [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
+      } else if (nextMonsterThreshold === targetLevel.baseLvl) {
+        killMonsters({ baseLvl: nextMonsterThreshold, jobLvl: 0 });
+
+        monsterIndex++;
+        [monsterId] = monsterBaseLvlThresholds[monsterIndex]!;
+
+        return;
       }
     }
 
