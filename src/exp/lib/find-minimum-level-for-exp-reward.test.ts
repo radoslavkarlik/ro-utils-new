@@ -1,6 +1,7 @@
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
-import { MonsterId, monsters } from '@/exp/monsters';
+import { monsters } from '@/exp/monsters';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
+import { MonsterId } from '@/exp/types/monster-id';
 
 describe('findMinimumLevelForExpReward', () => {
   test('returns correct base level for base exp only', () => {

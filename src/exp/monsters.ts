@@ -23,7 +23,7 @@ export const monsters: Record<MonsterId, Monster> = {
   [MonsterId.Wolf]: {
     id: MonsterId.Wolf,
     base: 329,
-    job: 129,
+    job: 199,
     prerequisite: { baseLevel: 45 },
   },
   [MonsterId.Metaling]: {
