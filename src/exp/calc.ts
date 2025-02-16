@@ -10,7 +10,7 @@ import {
 } from '@/exp/types/exp-point';
 import type { MonsterId } from '@/exp/types/monster-id';
 import { numericallyAsc, sortByProp } from '@/lib/sort-by';
-import { OVERLEVEL_MAX_PERCENTAGE, OVERLEVEL_PROTECTION } from './constants';
+import { OVERLEVEL_PROTECTION } from './constants';
 import { monsters } from './monsters';
 
 const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
@@ -107,17 +107,23 @@ export const calcMonsterCount = (
   ];
 };
 
-export const getMaxLevelAfterAppliedReward = (
-  start: LevelExpPoint,
-): LevelExpPoint => {
-  const overlevel = OVERLEVEL_MAX_PERCENTAGE / 100 + 1;
+export const capExpReward = (
+  startRaw: RawExpPoint,
+  startLevel: LevelExpPoint,
+  expReward: ExpReward,
+): ExpReward => {
+  const { expToNextLevel: expToNextLevelBase, totalExp: totalExpBase } =
+    baseExpChart[Math.floor(startLevel.baseLvl) as keyof typeof baseExpChart];
+  const { expToNextLevel: expToNextLevelJob, totalExp: totalExpJob } =
+    jobExpChart[Math.floor(startLevel.jobLvl) as keyof typeof jobExpChart];
 
-  const capLevelBase = Math.floor(start.baseLvl) + overlevel;
-  const capLevelJob = Math.floor(start.jobLvl) + overlevel;
+  const capExpBase =
+    2 * expToNextLevelBase - (startRaw.baseExp - totalExpBase) - 1;
+  const capExpJob = 2 * expToNextLevelJob - (startRaw.jobExp - totalExpJob) - 1;
 
   return {
-    baseLvl: capLevelBase,
-    jobLvl: capLevelJob,
+    base: Math.min(expReward.base, capExpBase),
+    job: Math.min(expReward.job, capExpJob),
   };
 };
 
@@ -127,10 +133,10 @@ export const willOverlevel = (
 ): {
   readonly base: boolean;
   readonly job: boolean;
-  checkOverLevel: boolean;
+  ignoreOverLevel: boolean;
 } => {
   if (!OVERLEVEL_PROTECTION) {
-    return { base: false, job: false, checkOverLevel: false };
+    return { base: false, job: false, ignoreOverLevel: false };
   }
 
   const [expRaw, expLevel] = isRawExpPoint(expPoint)
@@ -144,16 +150,18 @@ export const willOverlevel = (
 
   const targetLevel = getLevelExpPoint(targetExp);
 
-  const { baseLvl: capLevelBase, jobLvl: capLevelJob } =
-    getMaxLevelAfterAppliedReward(expLevel);
+  const { base: capRewardBase, job: capRewardJob } = capExpReward(
+    expRaw,
+    expLevel,
+    expReward,
+  );
 
   // TODO log exp was wasted but hit max job level
   return {
     base:
-      targetLevel.baseLvl !== maxBaseLevel &&
-      targetLevel.baseLvl > capLevelBase,
-    job: targetLevel.jobLvl !== maxJobLevel && targetLevel.jobLvl > capLevelJob,
-    checkOverLevel:
+      targetLevel.baseLvl !== maxBaseLevel && expReward.base > capRewardBase,
+    job: targetLevel.jobLvl !== maxJobLevel && expReward.job > capRewardJob,
+    ignoreOverLevel:
       targetLevel.baseLvl === maxBaseLevel ||
       targetLevel.jobLvl === maxJobLevel,
   };

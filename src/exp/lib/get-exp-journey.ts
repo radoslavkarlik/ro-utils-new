@@ -1,8 +1,8 @@
 import {
   type ExpReward,
   calcMonsterCount,
+  capExpReward,
   getLevelExpPoint,
-  getMaxLevelAfterAppliedReward,
   getMonsterBaseLvlThresholds,
   getRawExpPoint,
   willOverlevel,
@@ -184,32 +184,28 @@ export const getExpJourney = ({
   let expRaw = isRawExpPoint(start) ? start : getRawExpPoint(start);
   let expLevel = isRawExpPoint(start) ? getLevelExpPoint(start) : start;
 
-  const applyExp = (reward: ExpReward, checkOverLevel?: boolean): void => {
+  const applyExp = (reward: ExpReward, ignoreOverLevel?: boolean): void => {
     // TODO optimize, calculation is done in willOverflow already for quests, so it can return how much to add max if we decided to allow lost exp due to max level anyway
-    const { baseLvl: capLevelBase, jobLvl: capLevelJob } =
-      getMaxLevelAfterAppliedReward(expLevel);
 
-    expRaw = {
-      baseExp: expRaw.baseExp + reward.base,
-      jobExp: expRaw.jobExp + reward.job,
-    };
+    if (!OVERLEVEL_PROTECTION || !ignoreOverLevel) {
+      expRaw = {
+        baseExp: expRaw.baseExp + reward.base,
+        jobExp: expRaw.jobExp + reward.job,
+      };
+    } else {
+      const { base: capRewardBase, job: capRewardJob } = capExpReward(
+        expRaw,
+        expLevel,
+        reward,
+      );
+
+      expRaw = {
+        baseExp: expRaw.baseExp + capRewardBase,
+        jobExp: expRaw.jobExp + capRewardJob,
+      };
+    }
 
     expLevel = getLevelExpPoint(expRaw);
-
-    if (!OVERLEVEL_PROTECTION || !checkOverLevel) {
-      return;
-    }
-
-    if (expLevel.baseLvl <= capLevelBase && expLevel.jobLvl <= capLevelJob) {
-      return;
-    }
-
-    expLevel = {
-      baseLvl: Math.min(expLevel.baseLvl, capLevelBase),
-      jobLvl: Math.min(expLevel.jobLvl, capLevelJob),
-    };
-
-    expRaw = getRawExpPoint(expLevel);
   };
 
   const targetRaw = isRawExpPoint(target) ? target : getRawExpPoint(target);
@@ -319,7 +315,7 @@ export const getExpJourney = ({
     }
 
     // TODO refactor lol
-    let checkOverLevel = false;
+    let ignoreOverLevel = false;
 
     if (quest.monsterPrerequisites) {
       const { monsterId, count } = quest.monsterPrerequisites;
@@ -334,13 +330,13 @@ export const getExpJourney = ({
         const {
           base: overleveledBase,
           job: overleveledJob,
-          checkOverLevel: _checkOverLevel,
+          ignoreOverLevel: _ignoreOverLevel,
         } = willOverlevel(expRaw, {
           base: quest.totalReward.base,
           job: quest.totalReward.job,
         });
 
-        checkOverLevel = _checkOverLevel;
+        ignoreOverLevel = _ignoreOverLevel;
 
         if (overleveledBase || overleveledJob) {
           const targetLevel: LevelExpPoint = {
@@ -373,7 +369,7 @@ export const getExpJourney = ({
         base: quest.totalReward.base,
         job: quest.totalReward.job,
       },
-      checkOverLevel,
+      ignoreOverLevel,
     );
 
     questsToDo = questsToDo.filter((questToDo) => questToDo.id !== quest.id);
@@ -513,3 +509,6 @@ const steps = getExpJourney({
 // });
 
 console.log(steps);
+
+// TODO curse of gaebolg after crow of destiny
+// better logic if goal is job 50

@@ -114,7 +114,7 @@ export const quests: Record<QuestId, Quest> = {
       base: 1_600_000,
       job: MIN_EXP_REWARD,
     },
-    prerequisite: { baseLevel: 60 },
+    prerequisite: { baseLevel: 60, questIds: [QuestId.CrowOfDestiny] },
   },
   [QuestId.CrowOfDestiny]: {
     id: QuestId.CrowOfDestiny,
