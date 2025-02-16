@@ -7,7 +7,11 @@ import {
   getRawExpPoint,
   willOverlevel,
 } from '@/exp/calc';
-import { EXP_QUEST_RATE, OVERLEVEL_PROTECTION } from '@/exp/constants';
+import {
+  EXP_QUEST_RATE,
+  MIN_EXP_REWARD,
+  OVERLEVEL_PROTECTION,
+} from '@/exp/constants';
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
 import { monsters } from '@/exp/monsters';
 import type { Monster } from '@/exp/monsters';
@@ -419,15 +423,24 @@ export const getExpJourney = ({
           return count1 - count2;
         }
 
-        if (quest1.totalReward.job && !quest2.totalReward.job) {
+        if (
+          quest1.totalReward.job > MIN_EXP_REWARD &&
+          quest2.totalReward.job <= MIN_EXP_REWARD
+        ) {
           return 1;
         }
 
-        if (!quest1.totalReward.job && quest2.totalReward.job) {
+        if (
+          quest1.totalReward.job <= MIN_EXP_REWARD &&
+          quest2.totalReward.job > MIN_EXP_REWARD
+        ) {
           return -1;
         }
 
-        if (!quest1.totalReward.job && !quest2.totalReward.job) {
+        if (
+          quest1.totalReward.job <= MIN_EXP_REWARD &&
+          quest2.totalReward.job <= MIN_EXP_REWARD
+        ) {
           const minBase = Math.sign(quest1.minBaseLvl - quest2.minBaseLvl);
 
           if (minBase) {
@@ -469,28 +482,11 @@ export const getExpJourney = ({
   return steps;
 };
 
-// const steps = getExpJourney({
-//   start: { baseLvl: 11, jobLvl: 1 },
-//   target: { jobLvl: 50, baseLvl: 1 },
-//   allowedQuests: Object.values(QuestId),
-//   finishedQuests: [],
-//   allowedMonsters: [
-//     MonsterId.Spore,
-//     // MonsterId.Metaling,
-//     MonsterId.Muka,
-//     MonsterId.Wolf,
-//   ],
-// });
-
 const steps = getExpJourney({
-  start: { baseLvl: 62.487, jobLvl: 44.182 },
+  start: { baseLvl: 11, jobLvl: 1 },
   target: { jobLvl: 50, baseLvl: 1 },
   allowedQuests: Object.values(QuestId),
-  finishedQuests: [
-    QuestId.AcolyteTraining,
-    QuestId.Friendship,
-    QuestId.Bruspetti,
-  ],
+  finishedQuests: [],
   allowedMonsters: [
     MonsterId.Spore,
     // MonsterId.Metaling,
@@ -498,5 +494,22 @@ const steps = getExpJourney({
     MonsterId.Wolf,
   ],
 });
+
+// const steps = getExpJourney({
+//   start: { baseLvl: 62.773, jobLvl: 44.49 },
+//   target: { jobLvl: 50, baseLvl: 1 },
+//   allowedQuests: Object.values(QuestId),
+//   finishedQuests: [
+//     QuestId.AcolyteTraining,
+//     QuestId.Friendship,
+//     QuestId.Bruspetti,
+//   ],
+//   allowedMonsters: [
+//     MonsterId.Spore,
+//     // MonsterId.Metaling,
+//     MonsterId.Muka,
+//     MonsterId.Wolf,
+//   ],
+// });
 
 console.log(steps);

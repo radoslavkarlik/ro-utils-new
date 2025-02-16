@@ -1,3 +1,4 @@
+import { MIN_EXP_REWARD } from '@/exp/constants';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
 import type { ExpReward } from './calc';
@@ -44,7 +45,7 @@ export const quests: Record<QuestId, Quest> = {
     id: QuestId.AcolyteTraining,
     reward: [
       { base: 2_000, job: 2_000 },
-      { base: 0, job: 1_000 },
+      { base: MIN_EXP_REWARD, job: 1_000 },
       { base: 5_000, job: 3_000 },
     ],
     prerequisite: { jobLevel: 17 },
@@ -52,8 +53,8 @@ export const quests: Record<QuestId, Quest> = {
   [QuestId.Friendship]: {
     id: QuestId.Friendship,
     reward: [
-      { base: 200_000, job: 0 },
-      { base: 200_000, job: 0 },
+      { base: 200_000, job: MIN_EXP_REWARD },
+      { base: 200_000, job: MIN_EXP_REWARD },
     ],
     prerequisite: { baseLevel: 50 },
   },
@@ -61,7 +62,7 @@ export const quests: Record<QuestId, Quest> = {
     id: QuestId.Bruspetti,
     reward: {
       base: 450_000,
-      job: 0,
+      job: MIN_EXP_REWARD,
     },
     prerequisite: { baseLevel: 50, questIds: [QuestId.Friendship] },
   },
@@ -69,7 +70,7 @@ export const quests: Record<QuestId, Quest> = {
     id: QuestId.LostChild,
     reward: {
       base: 900_000,
-      job: 0,
+      job: MIN_EXP_REWARD,
     },
     prerequisite: { baseLevel: 60 },
   },
@@ -77,7 +78,7 @@ export const quests: Record<QuestId, Quest> = {
     id: QuestId.RachelSanctuary1,
     reward: {
       base: 200_000,
-      job: 0,
+      job: MIN_EXP_REWARD,
     },
     prerequisite: { baseLevel: 60, questIds: [QuestId.LostChild] },
   },
@@ -103,7 +104,7 @@ export const quests: Record<QuestId, Quest> = {
     id: QuestId.EyeOfHellion,
     reward: {
       base: 1_000_000,
-      job: 0,
+      job: MIN_EXP_REWARD,
     },
     prerequisite: { baseLevel: 60 },
   },
@@ -111,7 +112,7 @@ export const quests: Record<QuestId, Quest> = {
     id: QuestId.CurseOfGaebolg,
     reward: {
       base: 1_600_000,
-      job: 0,
+      job: MIN_EXP_REWARD,
     },
     prerequisite: { baseLevel: 60 },
   },

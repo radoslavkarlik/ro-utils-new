@@ -8,7 +8,7 @@ import {
   getRawExpPoint,
   willOverlevel,
 } from '@/exp/calc';
-import { OVERLEVEL_PROTECTION } from '@/exp/constants';
+import { MIN_EXP_REWARD, OVERLEVEL_PROTECTION } from '@/exp/constants';
 import type { Monster } from '@/exp/monsters';
 import { getRewardsArray } from '@/exp/quests';
 import type { LevelExpPoint, RawExpPoint } from '@/exp/types/exp-point';
@@ -34,7 +34,9 @@ export const findMinimumLevelForExpReward = (
         return startingExp;
       }
 
-      const firstBaseReward = rewards.find((reward) => reward.base > 0);
+      const firstBaseReward = rewards.find(
+        (reward) => reward.base > MIN_EXP_REWARD,
+      );
 
       const firstRewardResult = _findMinimumLevelForExpReward(
         firstBaseReward ? [firstBaseReward] : [],
@@ -72,7 +74,9 @@ export const findMinimumLevelForExpReward = (
         return startingExp;
       }
 
-      const firstJobReward = rewards.find((reward) => reward.job > 0);
+      const firstJobReward = rewards.find(
+        (reward) => reward.job > MIN_EXP_REWARD,
+      );
 
       const firstRewardResult = _findMinimumLevelForExpReward(
         firstJobReward ? [firstJobReward] : [],
