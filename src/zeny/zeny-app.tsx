@@ -17,7 +17,7 @@ import {
   sortByDesc,
   sortByProp,
 } from '@/lib/sort-by';
-import { type Monster, getMonsters } from './monsters/get-monsters';
+import { type Monster, getMonsters } from '../monsters/get-monsters';
 
 // TODO hit damage // or 1 hit option
 
@@ -28,7 +28,7 @@ type SortByState = {
 
 const columnHelper = createColumnHelper<Monster>();
 
-export function App() {
+export function ZenyApp() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'ID', desc: false },
   ]);
