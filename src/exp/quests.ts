@@ -22,7 +22,6 @@ export type ExpQuestWithMinLevel = ExpQuest & {
 
 export type MonsterQuest = {
   readonly id: QuestId;
-  readonly followUpQuest?: QuestId;
   readonly kills: {
     readonly monsterId: MonsterId;
     readonly count: number;
@@ -41,6 +40,13 @@ export const isExpQuestWithMinLevel = (
 ): quest is ExpQuestWithMinLevel => 'minRewardBaseLevel' in quest;
 
 export const quests: Record<QuestId, Quest> = {
+  [QuestId.AcolyteTrainingZombie]: {
+    id: QuestId.AcolyteTrainingZombie,
+    kills: {
+      monsterId: MonsterId.Zombie,
+      count: 6,
+    },
+  },
   [QuestId.AcolyteTraining]: {
     id: QuestId.AcolyteTraining,
     reward: [
@@ -48,7 +54,7 @@ export const quests: Record<QuestId, Quest> = {
       { base: MIN_EXP_REWARD, job: 1_000 },
       { base: 5_000, job: 3_000 },
     ],
-    prerequisite: { jobLevel: 17 },
+    prerequisite: { jobLevel: 17, questIds: [QuestId.AcolyteTrainingZombie] },
   },
   [QuestId.Friendship]: {
     id: QuestId.Friendship,

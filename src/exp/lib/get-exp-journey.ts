@@ -477,20 +477,32 @@ export const getExpJourney = ({
 
   return steps;
 };
-
+const s1 = performance.now();
 const steps = getExpJourney({
   start: { baseLvl: 11, jobLvl: 1 },
   target: { jobLvl: 50, baseLvl: 1 },
+  // allowedQuests: Object.values(QuestId).filter(
+  //   (q) =>
+  //     q !== QuestId.LostChild &&
+  //     q !== QuestId.RachelSanctuary1 &&
+  //     q !== QuestId.RachelSanctuary2 &&
+  //     q !== QuestId.RachelSanctuarySiroma,
+  // ),
+  // finishedQuests: [
+  //   QuestId.AcolyteTraining,
+  //   QuestId.Bruspetti,
+  //   QuestId.Friendship,
+  // ],
   allowedQuests: Object.values(QuestId),
   finishedQuests: [],
   allowedMonsters: [
     MonsterId.Spore,
-    // MonsterId.Metaling,
+    MonsterId.Metaling,
     MonsterId.Muka,
     MonsterId.Wolf,
   ],
 });
-
+const s2 = performance.now();
 // const steps = getExpJourney({
 //   start: { baseLvl: 62.773, jobLvl: 44.49 },
 //   target: { jobLvl: 50, baseLvl: 1 },
@@ -509,6 +521,8 @@ const steps = getExpJourney({
 // });
 
 console.log(steps);
+console.log((s2 - s1) / 1000);
 
-// TODO curse of gaebolg after crow of destiny
 // better logic if goal is job 50
+
+// overit overlevel u curse of gaebolg ked to nebude po crow of destinby

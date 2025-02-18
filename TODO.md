@@ -1,5 +1,3 @@
-5 decayed nails
-
 test journey from a fixed point.. e.g. for checking progress and overlevel from that one
 
 add batch quest warning
@@ -18,3 +16,10 @@ quests from db?
 functions for base and job separately cause often it uses explicitely one param as 0 and uses only result for one param
 
 exp point - class associated get raw, get level
+
+// simulate all quest orders
+toggle to allow some wasted exp fixed or % or max level
+
+optimize will overlevel - can probably be replaced with cap exp reward and compare
+
+goal 50 job

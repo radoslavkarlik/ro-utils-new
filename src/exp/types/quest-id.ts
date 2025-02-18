@@ -1,4 +1,5 @@
 export enum QuestId {
+  AcolyteTrainingZombie = 'AcolyteTrainingZombie',
   AcolyteTraining = 'AcolyteTraining',
   Friendship = 'Friendship',
   Bruspetti = 'Bruspetti',
