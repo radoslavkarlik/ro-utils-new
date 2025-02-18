@@ -23,3 +23,5 @@ toggle to allow some wasted exp fixed or % or max level
 optimize will overlevel - can probably be replaced with cap exp reward and compare
 
 goal 50 job
+
+// overit overlevel u curse of gaebolg ked to nebude po crow of destinby

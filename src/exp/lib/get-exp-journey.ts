@@ -37,8 +37,8 @@ import {
   type LevelExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
-import { MonsterId } from '@/exp/types/monster-id';
-import { QuestId } from '@/exp/types/quest-id';
+import type { MonsterId } from '@/exp/types/monster-id';
+import type { QuestId } from '@/exp/types/quest-id';
 
 type Args = {
   readonly start: ExpPoint;
@@ -477,52 +477,3 @@ export const getExpJourney = ({
 
   return steps;
 };
-const s1 = performance.now();
-const steps = getExpJourney({
-  start: { baseLvl: 11, jobLvl: 1 },
-  target: { jobLvl: 50, baseLvl: 1 },
-  // allowedQuests: Object.values(QuestId).filter(
-  //   (q) =>
-  //     q !== QuestId.LostChild &&
-  //     q !== QuestId.RachelSanctuary1 &&
-  //     q !== QuestId.RachelSanctuary2 &&
-  //     q !== QuestId.RachelSanctuarySiroma,
-  // ),
-  // finishedQuests: [
-  //   QuestId.AcolyteTraining,
-  //   QuestId.Bruspetti,
-  //   QuestId.Friendship,
-  // ],
-  allowedQuests: Object.values(QuestId),
-  finishedQuests: [],
-  allowedMonsters: [
-    MonsterId.Spore,
-    MonsterId.Metaling,
-    MonsterId.Muka,
-    MonsterId.Wolf,
-  ],
-});
-const s2 = performance.now();
-// const steps = getExpJourney({
-//   start: { baseLvl: 62.773, jobLvl: 44.49 },
-//   target: { jobLvl: 50, baseLvl: 1 },
-//   allowedQuests: Object.values(QuestId),
-//   finishedQuests: [
-//     QuestId.AcolyteTraining,
-//     QuestId.Friendship,
-//     QuestId.Bruspetti,
-//   ],
-//   allowedMonsters: [
-//     MonsterId.Spore,
-//     // MonsterId.Metaling,
-//     MonsterId.Muka,
-//     MonsterId.Wolf,
-//   ],
-// });
-
-console.log(steps);
-console.log((s2 - s1) / 1000);
-
-// better logic if goal is job 50
-
-// overit overlevel u curse of gaebolg ked to nebude po crow of destinby
