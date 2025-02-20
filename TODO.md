@@ -1,3 +1,6 @@
+terminate whole tree if new found and waiting ones are bad already
+-find earliest point where optimization makes sense, otherwise terminate early - like if all exp quests later gave no wasted exp, without any monsters between then the later part cant be optimized anymore
+
 TODO determine absolute best was found and quit.. 
 -if too many iterations without result?
 - or if the steps are perfect - minimum overflows (monster edges) between quests

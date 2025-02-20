@@ -16,11 +16,6 @@ export type ExpQuest = {
   readonly reward: ExpReward | ReadonlyArray<ExpReward>;
 };
 
-export type ExpQuestWithMinLevel = ExpQuest & {
-  readonly minRewardBaseLevel: number;
-  readonly minRewardJobLevel: number;
-};
-
 export type MonsterQuest = {
   readonly id: QuestId;
   readonly kills: {
@@ -31,14 +26,8 @@ export type MonsterQuest = {
 
 export type Quest = ExpQuest | MonsterQuest;
 
-export type AdjustedQuest = ExpQuestWithMinLevel | MonsterQuest;
-
 export const isExpQuest = (quest: Quest): quest is ExpQuest =>
   !('kills' in quest);
-
-export const isExpQuestWithMinLevel = (
-  quest: AdjustedQuest,
-): quest is ExpQuestWithMinLevel => 'minRewardBaseLevel' in quest;
 
 export const quests: Record<QuestId, Quest> = {
   [QuestId.AcolyteTrainingZombie]: {

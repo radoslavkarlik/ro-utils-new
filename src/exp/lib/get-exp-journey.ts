@@ -53,12 +53,12 @@ type Args = {
   readonly allowedMonsters: ReadonlyArray<MonsterId>;
 };
 
-export const getExpJourney = ({
+export function* getExpJourney({
   start,
   target,
   allowedMonsters,
   allowedQuests,
-}: Args): [ExpJourney, number] => {
+}: Args): Generator<[ExpJourney, number]> {
   const quests = Object.fromEntries(
     Object.entries(questsBeforeRates).map<[QuestId, Quest]>(
       ([questId, quest]) => [
@@ -185,6 +185,7 @@ export const getExpJourney = ({
       minKills = kills;
       bestSteps = steps;
       console.log(bestSteps, minKills);
+      yield [bestSteps, minKills];
       continue;
     }
 
@@ -459,12 +460,13 @@ export const getExpJourney = ({
         bestSteps = newSteps;
 
         console.log(bestSteps, minKills);
+        yield [bestSteps, minKills];
       }
     }
   }
 
-  return [bestSteps, minKills];
-};
+  yield [bestSteps, minKills];
+}
 
 type QueuedQuest = {
   readonly exp: RawExpPoint;
@@ -490,31 +492,41 @@ const meetsExpRequirements = (
   );
 };
 
-const [steps, kills] = getExpJourney({
-  start: { baseLvl: 11, jobLvl: 1 },
-  target: { jobLvl: 50, baseLvl: 1 },
-  // allowedQuests: Object.values(QuestId).values().take(5).toArray(),
-  allowedQuests: Object.values(QuestId),
-  //   allowedQuests: [
-  //     QuestId.CrowOfDestiny,
-  //     QuestId.RachelSanctuary2,
-  //     QuestId.RachelSanctuary1,
-  //     QuestId.RachelSanctuarySiroma,
-  //     QuestId.LostChild,
-  //     QuestId.Friendship,
-  //     QuestId.Bruspetti,
-  //     QuestId.EyeOfHellion,
-  //     QuestId.CurseOfGaebolg,
-  //     QuestId.AcolyteTraining,
-  //     QuestId.AcolyteTrainingZombie,
-  //   ],
-  allowedMonsters: [
-    MonsterId.Spore,
-    MonsterId.Muka,
-    MonsterId.Wolf,
-    // MonsterId.Metaling,
-  ],
-});
+let generator: ReturnType<typeof getExpJourney> | null = null; // Store generator instance
 
-// console.dir(steps, { depth: null });
-// console.log(kills);
+self.onmessage = (event) => {
+  const { baseLvl, jobLvl } = event.data;
+  if (typeof baseLvl === 'number' && typeof jobLvl === 'number') {
+    generator = getExpJourney({
+      start: { baseLvl, jobLvl },
+      target: { jobLvl: 50, baseLvl: 1 },
+      // allowedQuests: Object.values(QuestId).filter(
+      //   (q) =>
+      //     q !== QuestId.LostChild &&
+      //     q !== QuestId.RachelSanctuary1 &&
+      //     q !== QuestId.RachelSanctuary2 &&
+      //     q !== QuestId.RachelSanctuarySiroma,
+      // ),
+      // finishedQuests: [
+      //   QuestId.AcolyteTraining,
+      //   QuestId.Bruspetti,
+      //   QuestId.Friendship,
+      // ],
+      allowedQuests: Object.values(QuestId),
+      allowedMonsters: [
+        MonsterId.Spore,
+        // MonsterId.Metaling,
+        MonsterId.Muka,
+        MonsterId.Wolf,
+      ],
+    });
+  }
+
+  if (generator) {
+    for (const value of generator) {
+      self.postMessage({ value, done: false });
+    }
+
+    self.postMessage({ value: undefined, done: true });
+  }
+};
