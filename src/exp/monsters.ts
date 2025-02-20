@@ -14,13 +14,14 @@ export type Monster = ExpReward & {
 };
 
 export const monsters: Record<MonsterId, Monster> = {
+  [MonsterId.Spore]: { id: MonsterId.Spore, name: 'Spore', base: 66, job: 108 },
   [MonsterId.Zombie]: {
     id: MonsterId.Zombie,
     name: 'Zombie',
     base: 50,
     job: 33,
+    prerequisite: { baseLevel: 22 },
   },
-  [MonsterId.Spore]: { id: MonsterId.Spore, name: 'Spore', base: 66, job: 108 },
   [MonsterId.Muka]: {
     id: MonsterId.Muka,
     name: 'Muka',

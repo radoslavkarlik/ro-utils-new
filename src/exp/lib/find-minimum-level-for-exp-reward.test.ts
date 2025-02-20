@@ -6,7 +6,7 @@ import { MonsterId } from '@/exp/types/monster-id';
 
 describe('findMinimumLevelForExpReward', () => {
   test('returns correct base level for base exp only', () => {
-    const result = findMinimumLevelForExpReward({
+    const [result] = findMinimumLevelForExpReward({
       base: 900_000,
       job: MIN_EXP_REWARD,
     });
@@ -15,23 +15,23 @@ describe('findMinimumLevelForExpReward', () => {
   });
 
   test('returns correct job level for job exp only', () => {
-    const result = findMinimumLevelForExpReward({ base: 1, job: 600_000 });
+    const [result] = findMinimumLevelForExpReward({ base: 1, job: 600_000 });
 
-    expect(result).toEqual({ baseLvl: 1, jobLvl: 45 } satisfies LevelExpPoint);
+    expect(result).toEqual({ baseLvl: 1, jobLvl: 46 } satisfies LevelExpPoint);
   });
 
   test('returns correct base and job level for both base and job exp', () => {
-    const result = findMinimumLevelForExpReward({
+    const [result] = findMinimumLevelForExpReward({
       base: 900_000,
       job: 600_000,
     });
 
-    expect(result).toEqual({ baseLvl: 63, jobLvl: 45 } satisfies LevelExpPoint);
+    expect(result).toEqual({ baseLvl: 63, jobLvl: 46 } satisfies LevelExpPoint);
   });
 
   test('returns correct base and job level for both base and job exp if the exp is highest possible to satisfy the minimum level', () => {
-    const result = findMinimumLevelForExpReward({
-      base: 1405.5,
+    const [result] = findMinimumLevelForExpReward({
+      base: 1399,
       job: MIN_EXP_REWARD,
     });
 
@@ -39,7 +39,7 @@ describe('findMinimumLevelForExpReward', () => {
   });
 
   test('returns correct base and job level for batched quests', () => {
-    const result = findMinimumLevelForExpReward(
+    const [result] = findMinimumLevelForExpReward(
       [
         { base: 2_000, job: 2_000 },
         { base: MIN_EXP_REWARD, job: 1_000 },

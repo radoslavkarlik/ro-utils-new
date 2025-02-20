@@ -1,4 +1,4 @@
-import { getExpJourney } from '@/exp/lib/get-exp-journey';
+import { getExpJourney } from '@/exp/lib/get-exp-journey-old';
 import { monsters } from '@/exp/monsters';
 import { isMonsterExpJourneyStep } from '@/exp/types/exp-journey';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
@@ -31,7 +31,7 @@ export function ExpApp() {
         finishedQuests: [],
         allowedMonsters: [
           MonsterId.Spore,
-          MonsterId.Metaling,
+          // MonsterId.Metaling,
           MonsterId.Muka,
           MonsterId.Wolf,
         ],
@@ -68,6 +68,10 @@ export function ExpApp() {
               <ExpPoint point={step.expPoint} />
             </Fragment>
           ),
+        )}
+        {steps.reduce(
+          (total, s) => total + (isMonsterExpJourneyStep(s) ? s.count : 0),
+          0,
         )}
       </div>
     </div>

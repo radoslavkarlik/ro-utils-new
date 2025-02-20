@@ -17,7 +17,10 @@ export const findMinimumLevelForExpReward = (
   reward: ExpReward | ReadonlyArray<ExpReward>,
   getMonster?: (maxBaseLevel: number) => Monster,
   startingExp?: RawExpPoint,
-): LevelExpPoint => {
+): [
+  LevelExpPoint,
+  { readonly reachedMaxBase: boolean; readonly reachedMaxJob: boolean },
+] => {
   const rewards = getRewardsArray(reward);
   const allRewardsResult = _findMinimumLevelForExpReward(rewards);
 
@@ -25,13 +28,15 @@ export const findMinimumLevelForExpReward = (
     return allRewardsResult;
   }
 
-  const monster = getMonster(allRewardsResult.baseLvl);
-  const endExp = getRawExpPoint(allRewardsResult);
+  const [allRewardsExp] = allRewardsResult;
 
-  const baseLvl = ((): number => {
-    const startExp = ((): RawExpPoint => {
+  const monster = getMonster(allRewardsExp.baseLvl);
+  const endExp = getRawExpPoint(allRewardsExp);
+
+  const [baseLvl, reachedMaxBase] = ((): [number, boolean] => {
+    const [startExp, reachedMaxBase] = ((): [RawExpPoint, boolean] => {
       if (startingExp) {
-        return startingExp;
+        return [startingExp, false];
       }
 
       const firstBaseReward = rewards.find(
@@ -41,9 +46,14 @@ export const findMinimumLevelForExpReward = (
       const firstRewardResult = _findMinimumLevelForExpReward(
         firstBaseReward ? [firstBaseReward] : [],
       );
+      const [firstRewardExp, { reachedMaxBase }] = firstRewardResult;
 
-      return getRawExpPoint(firstRewardResult);
+      return [getRawExpPoint(firstRewardExp), reachedMaxBase];
     })();
+
+    if (reachedMaxBase) {
+      return [getLevelExpPoint(startExp).baseLvl, true];
+    }
 
     expLoop: for (
       let baseExp = startExp.baseExp;
@@ -53,25 +63,32 @@ export const findMinimumLevelForExpReward = (
       let currentBaseExp = baseExp;
 
       for (const reward of rewards) {
-        if (
-          willOverlevel({ baseExp: currentBaseExp, jobExp: 0 }, reward).base
-        ) {
+        const { base, reachedMaxBase } = willOverlevel(
+          { baseExp: currentBaseExp, jobExp: 0 },
+          reward,
+        );
+
+        if (reachedMaxBase) {
+          return [getLevelExpPoint({ baseExp, jobExp: 0 }).baseLvl, true];
+        }
+
+        if (base) {
           continue expLoop;
         }
 
         currentBaseExp += reward.base;
       }
 
-      return getLevelExpPoint({ baseExp, jobExp: 0 }).baseLvl;
+      return [getLevelExpPoint({ baseExp, jobExp: 0 }).baseLvl, false];
     }
 
-    return allRewardsResult.baseLvl;
+    return [allRewardsExp.baseLvl, false];
   })();
 
-  const jobLvl = ((): number => {
-    const startExp = ((): RawExpPoint => {
+  const [jobLvl, reachedMaxJob] = ((): [number, boolean] => {
+    const [startExp, reachedMaxJob] = ((): [RawExpPoint, boolean] => {
       if (startingExp) {
-        return startingExp;
+        return [startingExp, false];
       }
 
       const firstJobReward = rewards.find(
@@ -81,9 +98,14 @@ export const findMinimumLevelForExpReward = (
       const firstRewardResult = _findMinimumLevelForExpReward(
         firstJobReward ? [firstJobReward] : [],
       );
+      const [firstRewardExp, { reachedMaxJob }] = firstRewardResult;
 
-      return getRawExpPoint(firstRewardResult);
+      return [getRawExpPoint(firstRewardExp), reachedMaxJob];
     })();
+
+    if (reachedMaxJob) {
+      return [getLevelExpPoint(startExp).jobLvl, true];
+    }
 
     expLoop: for (
       let jobExp = startExp.jobExp;
@@ -93,77 +115,125 @@ export const findMinimumLevelForExpReward = (
       let currentJobExp = jobExp;
 
       for (const reward of rewards) {
-        if (willOverlevel({ baseExp: 0, jobExp: currentJobExp }, reward).job) {
+        const { job, reachedMaxJob } = willOverlevel(
+          { baseExp: 0, jobExp: currentJobExp },
+          reward,
+        );
+
+        if (reachedMaxJob) {
+          return [getLevelExpPoint({ baseExp: 0, jobExp }).jobLvl, true];
+        }
+
+        if (job) {
           continue expLoop;
         }
 
         currentJobExp += reward.job;
       }
 
-      return getLevelExpPoint({ baseExp: 0, jobExp }).jobLvl;
+      return [getLevelExpPoint({ baseExp: 0, jobExp }).jobLvl, false];
     }
 
-    return allRewardsResult.jobLvl;
+    return [allRewardsExp.jobLvl, false];
   })();
 
-  return {
-    baseLvl,
-    jobLvl,
-  };
+  return [
+    {
+      baseLvl,
+      jobLvl,
+    },
+    {
+      reachedMaxBase,
+      reachedMaxJob,
+    },
+  ];
 };
 
 const _findMinimumLevelForExpReward = (
   rewards: ReadonlyArray<ExpReward>,
-): LevelExpPoint => {
+): [
+  LevelExpPoint,
+  { readonly reachedMaxBase: boolean; readonly reachedMaxJob: boolean },
+] => {
   if (!OVERLEVEL_PROTECTION) {
-    return {
-      baseLvl: 1,
-      jobLvl: 1,
-    };
+    return [
+      {
+        baseLvl: 1,
+        jobLvl: 1,
+      },
+      {
+        reachedMaxBase: false,
+        reachedMaxJob: false,
+      },
+    ];
   }
 
-  const overlevelMinBase = ((): number => {
+  const [overlevelMinBase, reachedMaxBase] = ((): [number, boolean] => {
     let totalExp = 0;
 
     levelLoop: for (const [bLvl, baseExp] of Object.entries(baseExpChart)) {
       totalExp = baseExp.totalExp;
 
       for (const reward of rewards) {
-        if (willOverlevel({ baseExp: totalExp, jobExp: 0 }, reward).base) {
+        const { base, reachedMaxBase } = willOverlevel(
+          { baseExp: totalExp, jobExp: 0 },
+          reward,
+        );
+
+        if (reachedMaxBase) {
+          return [+bLvl, true];
+        }
+
+        if (base) {
           continue levelLoop;
         }
 
         totalExp += reward.base;
       }
 
-      return +bLvl;
+      return [+bLvl, false];
     }
 
-    return Number.POSITIVE_INFINITY;
+    return [Number.POSITIVE_INFINITY, false];
   })();
 
-  const overlevelMinJob = ((): number => {
+  const [overlevelMinJob, reachedMaxJob] = ((): [number, boolean] => {
     let totalExp = 0;
 
     levelLoop: for (const [jLvl, jobExp] of Object.entries(jobExpChart)) {
       totalExp = jobExp.totalExp;
 
       for (const reward of rewards) {
-        if (willOverlevel({ baseExp: 0, jobExp: totalExp }, reward).job) {
+        const { job, reachedMaxJob } = willOverlevel(
+          { baseExp: 0, jobExp: totalExp },
+          reward,
+        );
+
+        if (reachedMaxJob) {
+          return [+jLvl, true];
+        }
+
+        if (job) {
           continue levelLoop;
         }
 
         totalExp += reward.job;
       }
 
-      return +jLvl;
+      return [+jLvl, false];
     }
 
-    return Number.POSITIVE_INFINITY;
+    return [Number.POSITIVE_INFINITY, false];
   })();
 
-  return {
-    baseLvl: overlevelMinBase,
-    jobLvl: overlevelMinJob,
-  };
+  return [
+    {
+      baseLvl: overlevelMinBase,
+      jobLvl: overlevelMinJob,
+    },
+    {
+      reachedMaxBase,
+      reachedMaxJob,
+    },
+  ];
 };

@@ -1,3 +1,7 @@
+TODO determine absolute best was found and quit.. 
+-if too many iterations without result?
+- or if the steps are perfect - minimum overflows (monster edges) between quests
+
 test journey from a fixed point.. e.g. for checking progress and overlevel from that one
 
 add batch quest warning
@@ -17,11 +21,8 @@ functions for base and job separately cause often it uses explicitely one param 
 
 exp point - class associated get raw, get level
 
-// simulate all quest orders
 toggle to allow some wasted exp fixed or % or max level
 
 optimize will overlevel - can probably be replaced with cap exp reward and compare
 
 goal 50 job
-
-// overit overlevel u curse of gaebolg ked to nebude po crow of destinby
