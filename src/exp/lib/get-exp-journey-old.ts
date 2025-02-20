@@ -238,7 +238,11 @@ export const getExpJourney = ({
   };
 
   const killMonsters = (target: ExpPoint) => {
-    const [count, newExpPoint] = calcMonsterCount(expRaw, target, monsterId);
+    const [count, newExpPoint] = calcMonsterCount(
+      expRaw,
+      target,
+      monsters[monsterId],
+    );
 
     applyExp(newExpPoint);
     addMonsterStep({ monsterId, count, expPoint: expLevel });
@@ -318,8 +322,8 @@ export const getExpJourney = ({
       const monster = monsters[monsterId];
 
       applyExp({
-        base: monster.base * count,
-        job: monster.job * count,
+        base: monster.reward.base * count,
+        job: monster.reward.job * count,
       });
     } else {
       if (quest.rewards.length === 1) {
@@ -410,8 +414,8 @@ export const getExpJourney = ({
         }
 
         if (!meets1 && !meets2) {
-          const [count1] = calcMonsterCount(expRaw, req1, monsterId);
-          const [count2] = calcMonsterCount(expRaw, req2, monsterId);
+          const [count1] = calcMonsterCount(expRaw, req1, monsters[monsterId]);
+          const [count2] = calcMonsterCount(expRaw, req2, monsters[monsterId]);
 
           return count1 - count2;
         }

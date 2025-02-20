@@ -1,6 +1,6 @@
-import type { MonsterId } from '@/exp/monsters';
-import type { QuestId } from '@/exp/quests';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
+import type { MonsterId } from '@/exp/types/monster-id';
+import type { QuestId } from '@/exp/types/quest-id';
 
 export type ExpJourneyMonsterStep = {
   readonly expPoint: LevelExpPoint;

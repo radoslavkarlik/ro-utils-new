@@ -11,7 +11,7 @@ import {
 import type { MonsterId } from '@/exp/types/monster-id';
 import { numericallyAsc, sortByProp } from '@/lib/sort-by';
 import { OVERLEVEL_PROTECTION } from './constants';
-import { monsters } from './monsters';
+import { type Monster, monsters } from './monsters';
 
 const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
 const maxJobLevel = Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
@@ -81,22 +81,21 @@ export const getLevelExpPoint = (point: RawExpPoint): LevelExpPoint => {
 export const calcMonsterCount = (
   start: ExpPoint,
   target: ExpPoint,
-  monsterId: MonsterId,
+  monster: Monster,
 ): [number, ExpReward] => {
-  const monster = monsters[monsterId];
   const startRawExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
   const targetRawExp = isRawExpPoint(target) ? target : getRawExpPoint(target);
 
   const baseCount = targetRawExp.baseExp
-    ? (targetRawExp.baseExp - startRawExp.baseExp) / monster.base
+    ? (targetRawExp.baseExp - startRawExp.baseExp) / monster.reward.base
     : 0;
   const jobCount = targetRawExp.jobExp
-    ? (targetRawExp.jobExp - startRawExp.jobExp) / monster.job
+    ? (targetRawExp.jobExp - startRawExp.jobExp) / monster.reward.job
     : 0;
 
   const count = Math.ceil(Math.max(baseCount, jobCount));
-  const base = count * monster.base;
-  const job = count * monster.job;
+  const base = count * monster.reward.base;
+  const job = count * monster.reward.job;
 
   return [
     count,
@@ -204,3 +203,8 @@ export const getMonsterBaseLvlThresholds = (
       }),
     )
     .map((monster) => [monster.id, monster.prerequisite?.baseLevel ?? 1]);
+
+export const applyRates = (expReward: ExpReward, rates: number): ExpReward => ({
+  base: Math.floor(expReward.base * rates),
+  job: Math.floor(expReward.job * rates),
+});

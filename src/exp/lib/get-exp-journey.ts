@@ -4,6 +4,7 @@ import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
 };
 import {
   type ExpReward,
+  applyRates,
   calcMonsterCount,
   capExpRewardBase,
   capExpRewardJob,
@@ -11,14 +12,19 @@ import {
   getMonsterBaseLvlThresholds,
   getRawExpPoint,
 } from '@/exp/calc';
-import { OVERLEVEL_PROTECTION } from '@/exp/constants';
-import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
-import { monsters } from '@/exp/monsters';
 import {
+  EXP_QUEST_RATE,
+  MONSTER_RATE,
+  OVERLEVEL_PROTECTION,
+} from '@/exp/constants';
+import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
+import { type Monster, monsters as monstersBeforeRates } from '@/exp/monsters';
+import {
+  type Quest,
   getRewardsArray,
   getTotalExpReward,
   isExpQuest,
-  quests,
+  quests as questsBeforeRates,
 } from '@/exp/quests';
 import {
   type ExpJourneQuestStep,
@@ -34,6 +40,7 @@ import {
 } from '@/exp/types/exp-point';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
+import { isArray } from '@/lib/is-array';
 import { PriorityQueue } from '@/lib/priority-queue';
 
 const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
@@ -52,6 +59,36 @@ export const getExpJourney = ({
   allowedMonsters,
   allowedQuests,
 }: Args): [ExpJourney, number] => {
+  const quests = Object.fromEntries(
+    Object.entries(questsBeforeRates).map<[QuestId, Quest]>(
+      ([questId, quest]) => [
+        questId as QuestId,
+        {
+          ...quest,
+          ...(isExpQuest(quest)
+            ? {
+                ...quest,
+                reward: isArray(quest.reward)
+                  ? quest.reward.map((reward) =>
+                      applyRates(reward, EXP_QUEST_RATE),
+                    )
+                  : applyRates(quest.reward, EXP_QUEST_RATE),
+              }
+            : {}),
+        },
+      ],
+    ),
+  ) as typeof questsBeforeRates;
+
+  const monsters = Object.fromEntries(
+    Object.entries(monstersBeforeRates).map<[MonsterId, Monster]>(
+      ([monsterId, monster]) => [
+        monsterId as MonsterId,
+        { ...monster, reward: applyRates(monster.reward, MONSTER_RATE) },
+      ],
+    ),
+  ) as typeof monstersBeforeRates;
+
   const startExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
   const targetExp = isRawExpPoint(target) ? target : getRawExpPoint(target);
   const monsterBaseLvlThresholds = getMonsterBaseLvlThresholds(allowedMonsters);
@@ -119,7 +156,7 @@ export const getExpJourney = ({
       monsterIndex: 0,
       monsterId: MonsterId.Spore,
     },
-    heuristic(startExp, monsters[MonsterId.Spore]),
+    heuristic(startExp, monsters[MonsterId.Spore].reward),
   );
 
   let minKills = Number.POSITIVE_INFINITY;
@@ -211,7 +248,11 @@ export const getExpJourney = ({
       };
 
       const killMonsters = (target: ExpPoint, monsterId: MonsterId) => {
-        const [count, reward] = calcMonsterCount(newExp, target, monsterId);
+        const [count, reward] = calcMonsterCount(
+          newExp,
+          target,
+          monsters[monsterId],
+        );
 
         applyExp(reward, true, true);
         addMonsterStep({ monsterId, count, expPoint: newLevel });
@@ -346,8 +387,8 @@ export const getExpJourney = ({
 
         applyExp(
           {
-            base: quest.kills.count * monster.base,
-            job: quest.kills.count * monster.job,
+            base: quest.kills.count * monster.reward.base,
+            job: quest.kills.count * monster.reward.job,
           },
           true,
           true,
@@ -389,7 +430,7 @@ export const getExpJourney = ({
           monsterIndex: newMonsterIndex,
           monsterId: newMonsterId,
         },
-        newKills + heuristic(newExp, monsters[newMonsterId]),
+        newKills + heuristic(newExp, monsters[newMonsterId].reward),
       );
     }
 
@@ -397,7 +438,7 @@ export const getExpJourney = ({
       const [killsNeeded, receivedExp] = calcMonsterCount(
         exp,
         targetExp,
-        monsterId,
+        monsters[monsterId],
       );
 
       const newKills = kills + killsNeeded;

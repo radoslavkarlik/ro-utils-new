@@ -58,7 +58,7 @@ export const findMinimumLevelForExpReward = (
     expLoop: for (
       let baseExp = startExp.baseExp;
       baseExp <= endExp.baseExp;
-      baseExp += monster.base
+      baseExp += monster.reward.base
     ) {
       let currentBaseExp = baseExp;
 
@@ -110,7 +110,7 @@ export const findMinimumLevelForExpReward = (
     expLoop: for (
       let jobExp = startExp.jobExp;
       jobExp <= endExp.jobExp;
-      jobExp += monster.job
+      jobExp += monster.reward.job
     ) {
       let currentJobExp = jobExp;
 

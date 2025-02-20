@@ -2,6 +2,11 @@ TODO determine absolute best was found and quit..
 -if too many iterations without result?
 - or if the steps are perfect - minimum overflows (monster edges) between quests
 
+create instance with rates, charts etc
+
+optimization
+-save on lookups, etc
+
 test journey from a fixed point.. e.g. for checking progress and overlevel from that one
 
 add batch quest warning

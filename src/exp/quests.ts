@@ -1,6 +1,7 @@
 import { MIN_EXP_REWARD } from '@/exp/constants';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
+import { isArray } from '@/lib/is-array';
 import type { ExpReward } from './calc';
 
 export type QuestPrerequisite = {
@@ -134,7 +135,7 @@ export const quests: Record<QuestId, Quest> = {
 
 export const getRewardsArray = (
   reward: ExpReward | ReadonlyArray<ExpReward>,
-): ReadonlyArray<ExpReward> => (Array.isArray(reward) ? reward : [reward]);
+): ReadonlyArray<ExpReward> => (isArray(reward) ? reward : [reward]);
 
 export const getTotalExpReward = (
   rewards: ReadonlyArray<ExpReward>,
