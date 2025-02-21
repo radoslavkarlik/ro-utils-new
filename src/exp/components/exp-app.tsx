@@ -6,6 +6,7 @@ import {
 } from '@/exp/types/exp-journey';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
 import { QuestId } from '@/exp/types/quest-id';
+import { cn } from '@/lib/cn';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 
 export function ExpApp() {
@@ -13,7 +14,7 @@ export function ExpApp() {
   const [jobLvl, setJobLvl] = useState(1);
 
   const { value, startGenerator } = useGeneratorWorker();
-  const [steps, totalKillCount] = value;
+  const [steps, totalKillCount, isFinished] = value;
 
   useEffect(() => {
     const cleanUp = startGenerator(baseLvl, jobLvl);
@@ -37,7 +38,12 @@ export function ExpApp() {
           onChange={(e) => setJobLvl(Number(e.currentTarget.value) || 1)}
         />
       </div>
-      <div className="grid grid-cols-[repeat(2,min-content)] gap-x-10">
+      <div
+        className={cn(
+          'grid grid-cols-[repeat(2,min-content)] gap-x-10',
+          isFinished && 'text-green-800',
+        )}
+      >
         {steps.map((step, index) =>
           isMonsterExpJourneyStep(step) ? (
             <Fragment key={index}>
@@ -72,9 +78,10 @@ function ExpPoint({ point }: ExpPointProps) {
 }
 
 const useGeneratorWorker = () => {
-  const [value, setValue] = useState<[ExpJourney, number]>([
+  const [value, setValue] = useState<[ExpJourney, number, boolean]>([
     [],
     Number.POSITIVE_INFINITY,
+    false,
   ]);
   const [worker, setWorker] = useState<Worker | null>(null);
 
@@ -84,7 +91,12 @@ const useGeneratorWorker = () => {
     setWorker(newWorker);
 
     newWorker.onmessage = (event) => {
-      setValue(event.data.value);
+      if (!event.data.value) {
+        setValue(([steps, kills]) => [steps, kills, true]);
+        newWorker.terminate();
+      } else {
+        setValue(event.data.value);
+      }
     };
 
     return () => newWorker.terminate(); // Cleanup worker on unmount

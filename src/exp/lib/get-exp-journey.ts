@@ -162,6 +162,16 @@ export function* getExpJourney({
   let minKills = Number.POSITIVE_INFINITY;
   let bestSteps: ReadonlyArray<ExpJourneyStep> = [];
 
+  const setBest = (
+    newMinKills: number,
+    newBestSteps: ReadonlyArray<ExpJourneyStep>,
+  ): void => {
+    minKills = newMinKills;
+    bestSteps = newBestSteps;
+    console.log(bestSteps, minKills);
+    pq.clear((item) => item.kills >= newMinKills);
+  };
+
   while (!pq.isEmpty()) {
     const queueItem = pq.dequeue();
 
@@ -182,9 +192,7 @@ export function* getExpJourney({
 
     // If already reached target level, update the best result
     if (meetsExpRequirements(exp, targetExp) && kills < minKills) {
-      minKills = kills;
-      bestSteps = steps;
-      console.log(bestSteps, minKills);
+      setBest(kills, steps);
       yield [bestSteps, minKills];
       continue;
     }
@@ -334,7 +342,6 @@ export function* getExpJourney({
       if (!meetsExpRequirements(newExp, reqExp)) {
         getExpFromMonsters(reqExp);
 
-        // ?
         if (newKills >= minKills) {
           continue;
         }
@@ -443,23 +450,23 @@ export function* getExpJourney({
       );
 
       const newKills = kills + killsNeeded;
-      const finishedExp: RawExpPoint = {
-        baseExp: exp.baseExp + receivedExp.base,
-        jobExp: exp.jobExp + receivedExp.job,
-      };
 
       if (newKills < minKills) {
-        minKills = newKills;
-        const newSteps = [...steps];
-        newSteps.push({
-          monsterId,
-          count: killsNeeded,
-          expPoint: getLevelExpPoint(finishedExp),
-        });
+        const finishedExp: RawExpPoint = {
+          baseExp: exp.baseExp + receivedExp.base,
+          jobExp: exp.jobExp + receivedExp.job,
+        };
 
-        bestSteps = newSteps;
+        const newSteps = [
+          ...steps,
+          {
+            monsterId,
+            count: killsNeeded,
+            expPoint: getLevelExpPoint(finishedExp),
+          } satisfies ExpJourneyMonsterStep,
+        ];
 
-        console.log(bestSteps, minKills);
+        setBest(newKills, newSteps);
         yield [bestSteps, minKills];
       }
     }
@@ -515,7 +522,7 @@ self.onmessage = (event) => {
       allowedQuests: Object.values(QuestId),
       allowedMonsters: [
         MonsterId.Spore,
-        // MonsterId.Metaling,
+        MonsterId.Metaling,
         MonsterId.Muka,
         MonsterId.Wolf,
       ],

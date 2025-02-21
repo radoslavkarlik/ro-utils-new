@@ -17,4 +17,14 @@ export class PriorityQueue<T> {
   public isEmpty(): boolean {
     return this.#queue.length === 0;
   }
+
+  public clear(predicate?: (item: T, priority: number) => boolean) {
+    if (!predicate) {
+      this.#queue = [];
+    } else {
+      this.#queue = this.#queue.filter(
+        ({ item, priority }) => !predicate(item, priority),
+      );
+    }
+  }
 }
