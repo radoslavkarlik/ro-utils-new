@@ -58,7 +58,7 @@ export function* getExpJourney({
   target,
   allowedMonsters,
   allowedQuests,
-}: Args): Generator<[ExpJourney, number]> {
+}: Args): Generator<ExpJourney> {
   const quests = Object.fromEntries(
     Object.entries(questsBeforeRates).map<[QuestId, Quest]>(
       ([questId, quest]) => [
@@ -168,7 +168,7 @@ export function* getExpJourney({
   ): void => {
     minKills = newMinKills;
     bestSteps = newBestSteps;
-    console.log(bestSteps, minKills);
+
     pq.clear((item) => item.kills >= newMinKills);
   };
 
@@ -193,7 +193,7 @@ export function* getExpJourney({
     // If already reached target level, update the best result
     if (meetsExpRequirements(exp, targetExp) && kills < minKills) {
       setBest(kills, steps);
-      yield [bestSteps, minKills];
+      yield bestSteps;
       continue;
     }
 
@@ -467,12 +467,10 @@ export function* getExpJourney({
         ];
 
         setBest(newKills, newSteps);
-        yield [bestSteps, minKills];
+        yield bestSteps;
       }
     }
   }
-
-  yield [bestSteps, minKills];
 }
 
 type QueuedQuest = {
@@ -522,7 +520,7 @@ self.onmessage = (event) => {
       allowedQuests: Object.values(QuestId),
       allowedMonsters: [
         MonsterId.Spore,
-        MonsterId.Metaling,
+        // MonsterId.Metaling,
         MonsterId.Muka,
         MonsterId.Wolf,
       ],

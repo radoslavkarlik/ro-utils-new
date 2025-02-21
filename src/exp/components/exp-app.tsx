@@ -14,7 +14,7 @@ export function ExpApp() {
   const [jobLvl, setJobLvl] = useState(1);
 
   const { value, startGenerator } = useGeneratorWorker();
-  const [steps, totalKillCount, isFinished] = value;
+  const [steps, isFinished] = value;
 
   useEffect(() => {
     const cleanUp = startGenerator(baseLvl, jobLvl);
@@ -59,7 +59,19 @@ export function ExpApp() {
             </Fragment>
           ),
         )}
-        {totalKillCount}
+        <div className="mt-3">
+          {Object.entries(
+            Object.groupBy(
+              steps.filter(isMonsterExpJourneyStep),
+              (step) => step.monsterId,
+            ),
+          ).map(([monsterId, steps]) => (
+            <div key={monsterId}>
+              {monsters[monsterId as keyof typeof monsters].name}:{' '}
+              {steps.reduce((totalKills, step) => totalKills + step.count, 0)}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -78,11 +90,7 @@ function ExpPoint({ point }: ExpPointProps) {
 }
 
 const useGeneratorWorker = () => {
-  const [value, setValue] = useState<[ExpJourney, number, boolean]>([
-    [],
-    Number.POSITIVE_INFINITY,
-    false,
-  ]);
+  const [value, setValue] = useState<[ExpJourney, boolean]>([[], false]);
   const [worker, setWorker] = useState<Worker | null>(null);
 
   useEffect(() => {
@@ -92,10 +100,10 @@ const useGeneratorWorker = () => {
 
     newWorker.onmessage = (event) => {
       if (!event.data.value) {
-        setValue(([steps, kills]) => [steps, kills, true]);
+        setValue(([steps]) => [steps, true]);
         newWorker.terminate();
       } else {
-        setValue(event.data.value);
+        setValue([event.data.value, false]);
       }
     };
 
