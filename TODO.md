@@ -1,3 +1,14 @@
+better kills metric, this will skip base epx quests because they didnt decrease total kills (same job exp at the end) but higher level means faster killing of mobs
+--maybe enough that exp quests were earlier in the steps before monsters.. same total but monster after quest means better.. maybe just count indexes
+
+s rate 0.95 uz zabijal muky do lvl 50, pod 1 sa pokazi
+
+also explore of possibility of skipping some quests? cause it tries to do all and then terminate if reached job 50
+
+if monster prerequisites were done, then dont finish until the dependend quest is done otherwise they are wasted. Maybe can straight up remove itself and not queue others
+
+ore 0.5 skipol questy, je to spravne?
+
 create instance with rates, charts etc
 
 test journey from a fixed point.. e.g. for checking progress and overlevel from that one

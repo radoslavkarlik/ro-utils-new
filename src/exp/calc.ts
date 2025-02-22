@@ -52,30 +52,38 @@ export const getRawExpPoint = (point: LevelExpPoint): RawExpPoint => {
 };
 
 export const getLevelExpPoint = (point: RawExpPoint): LevelExpPoint => {
+  return {
+    baseLvl: getBaseLevel(point.baseExp),
+    jobLvl: getJobLevel(point.jobExp),
+  };
+};
+
+export const getBaseLevel = (baseExp: number): number => {
   const [baseLvl, baseLvlExp] =
     Object.entries(baseExpChart)
       .toReversed()
-      .find(([, { totalExp }]) => totalExp < point.baseExp) ?? emptyExpEntry;
+      .find(([, { totalExp }]) => totalExp < baseExp) ?? emptyExpEntry;
 
-  const remainingExp = point.baseExp - baseLvlExp.totalExp;
+  const remainingExp = baseExp - baseLvlExp.totalExp;
   const percentage = baseLvlExp.expToNextLevel
     ? remainingExp / baseLvlExp.expToNextLevel
     : 0;
 
+  return +baseLvl + percentage;
+};
+
+export const getJobLevel = (jobExp: number): number => {
   const [jobLvl, jobLvlExp] =
     Object.entries(jobExpChart)
       .toReversed()
-      .find(([, { totalExp }]) => totalExp < point.jobExp) ?? emptyExpEntry;
+      .find(([, { totalExp }]) => totalExp < jobExp) ?? emptyExpEntry;
 
-  const remainingExpJob = point.jobExp - jobLvlExp.totalExp;
+  const remainingExpJob = jobExp - jobLvlExp.totalExp;
   const percentageJob = jobLvlExp.expToNextLevel
     ? remainingExpJob / jobLvlExp.expToNextLevel
     : 0;
 
-  return {
-    baseLvl: +baseLvl + percentage,
-    jobLvl: +jobLvl + percentageJob,
-  };
+  return +jobLvl + percentageJob;
 };
 
 export const calcMonsterCount = (

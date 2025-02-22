@@ -408,6 +408,8 @@ export function* getExpJourney({
         expPoint: newLevel,
       });
 
+      const newCompleted = new Set(completed).add(questId);
+
       const newAvailable = new Set(available);
       newAvailable.delete(quest.id);
 
@@ -420,8 +422,6 @@ export function* getExpJourney({
           Math.max(0, (newInDegree.get(dependent) ?? 0) - 1),
         );
 
-        // newInDegree.set(dependent, newInDegree.get(dependent) - 1);
-
         if (newInDegree.get(dependent) === 0) {
           newAvailable.add(dependent);
         }
@@ -431,7 +431,7 @@ export function* getExpJourney({
         {
           exp: newExp,
           kills: newKills,
-          completed: new Set(completed).add(questId),
+          completed: newCompleted,
           inDegree: newInDegree,
           available: newAvailable,
           steps: newSteps,
@@ -498,10 +498,13 @@ const meetsExpRequirements = (
 };
 
 let generator: ReturnType<typeof getExpJourney> | null = null; // Store generator instance
+let start: DOMHighResTimeStamp;
+let end: DOMHighResTimeStamp;
 
 self.onmessage = (event) => {
   const { baseLvl, jobLvl } = event.data;
   if (typeof baseLvl === 'number' && typeof jobLvl === 'number') {
+    start = performance.now();
     generator = getExpJourney({
       start: { baseLvl, jobLvl },
       target: { jobLvl: 50, baseLvl: 1 },
@@ -512,11 +515,6 @@ self.onmessage = (event) => {
       //     q !== QuestId.RachelSanctuary2 &&
       //     q !== QuestId.RachelSanctuarySiroma,
       // ),
-      // finishedQuests: [
-      //   QuestId.AcolyteTraining,
-      //   QuestId.Bruspetti,
-      //   QuestId.Friendship,
-      // ],
       allowedQuests: Object.values(QuestId),
       allowedMonsters: [
         MonsterId.Spore,
@@ -532,6 +530,8 @@ self.onmessage = (event) => {
       self.postMessage({ value, done: false });
     }
 
-    self.postMessage({ value: undefined, done: true });
+    end = performance.now();
+    const seconds = (end - start) / 1000;
+    self.postMessage({ value: seconds, done: true });
   }
 };
