@@ -1,5 +1,4 @@
-import WorkerURL from '@/exp/lib/get-exp-journey.ts?worker';
-import { monsters } from '@/exp/monsters';
+import WorkerURL from '@/exp/exp-journey-worker.ts?worker';
 import {
   type ExpJourney,
   isMonsterExpJourneyStep,
@@ -47,8 +46,8 @@ export function ExpApp() {
         {steps.map((step, index) =>
           isMonsterExpJourneyStep(step) ? (
             <Fragment key={index}>
-              <div>
-                {step.count} {monsters[step.monsterId].name}
+              <div className="whitespace-nowrap">
+                {step.kills} {step.monsterName}
               </div>
               <ExpPoint point={step.expPoint} />
             </Fragment>
@@ -64,12 +63,12 @@ export function ExpApp() {
           {Object.entries(
             Object.groupBy(
               steps.filter(isMonsterExpJourneyStep),
-              (step) => step.monsterId,
+              (step) => step.monsterName,
             ),
-          ).map(([monsterId, steps]) => (
-            <div key={monsterId}>
-              {monsters[monsterId as keyof typeof monsters].name}:{' '}
-              {steps.reduce((totalKills, step) => totalKills + step.count, 0)}
+          ).map(([monsterName, steps]) => (
+            <div key={monsterName} className="whitespace-nowrap">
+              {monsterName}:{' '}
+              {steps?.reduce((totalKills, step) => totalKills + step.kills, 0)}
             </div>
           ))}
         </div>

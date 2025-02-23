@@ -1,7 +1,8 @@
-export class PriorityQueue<T> {
+export class PriorityQueue<T> extends Iterator<T> {
   #queue: Array<{ readonly item: T; readonly priority: number }>;
 
   constructor() {
+    super();
     this.#queue = [];
   }
 
@@ -14,10 +15,6 @@ export class PriorityQueue<T> {
     return this.#queue.shift()?.item;
   }
 
-  public isEmpty(): boolean {
-    return this.#queue.length === 0;
-  }
-
   public clear(predicate?: (item: T, priority: number) => boolean) {
     if (!predicate) {
       this.#queue = [];
@@ -26,5 +23,11 @@ export class PriorityQueue<T> {
         ({ item, priority }) => !predicate(item, priority),
       );
     }
+  }
+
+  public next(): IteratorResult<T, undefined> {
+    const value = this.dequeue();
+
+    return value ? { value } : { value: undefined, done: true };
   }
 }

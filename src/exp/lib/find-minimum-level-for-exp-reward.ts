@@ -2,16 +2,12 @@ import baseExpChart from '@/data/base-exp-chart.json' with { type: 'json' };
 import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
   type: 'json',
 };
-import {
-  type ExpReward,
-  getLevelExpPoint,
-  getRawExpPoint,
-  willOverlevel,
-} from '@/exp/calc';
+import { getLevelExpPoint, getRawExpPoint, willOverlevel } from '@/exp/calc';
 import { MIN_EXP_REWARD, OVERLEVEL_PROTECTION } from '@/exp/constants';
 import type { Monster } from '@/exp/monsters';
-import { getRewardsArray } from '@/exp/quests';
 import type { LevelExpPoint, RawExpPoint } from '@/exp/types/exp-point';
+import type { ExpReward } from '@/exp/types/exp-reward';
+import { getRewardsArray } from '@/exp/types/quest';
 
 export const findMinimumLevelForExpReward = (
   reward: ExpReward | ReadonlyArray<ExpReward>,

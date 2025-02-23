@@ -8,47 +8,44 @@ import {
   type RawExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
-import type { MonsterId } from '@/exp/types/monster-id';
-import { numericallyAsc, sortByProp } from '@/lib/sort-by';
+import type { ExpReward } from '@/exp/types/exp-reward';
 import { OVERLEVEL_PROTECTION } from './constants';
-import { type Monster, monsters } from './monsters';
+import type { Monster } from './monsters';
 
 const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
 const maxJobLevel = Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
 
-export type ExpReward = {
-  readonly base: number;
-  readonly job: number;
-};
-
 const emptyExpEntry = [1, { totalExp: 0, expToNextLevel: 0 }] as const;
 
 export const getRawExpPoint = (point: LevelExpPoint): RawExpPoint => {
-  const baseLevel = Math.floor(point.baseLvl);
-  const basePercentage = point.baseLvl - baseLevel;
+  return {
+    baseExp: getBaseExp(point.baseLvl),
+    jobExp: getJobExp(point.jobLvl),
+  };
+};
+
+export const getBaseExp = (baseLvl: number): number => {
+  const wholeLevel = Math.floor(baseLvl);
+  const percentage = baseLvl - wholeLevel;
 
   const [, baseLvlExp] =
     Object.entries(baseExpChart)
       .toReversed()
-      .find(([level]) => +level === baseLevel) ?? emptyExpEntry;
+      .find(([level]) => +level === wholeLevel) ?? emptyExpEntry;
 
-  const baseExp =
-    baseLvlExp.totalExp + baseLvlExp.expToNextLevel * basePercentage;
+  return baseLvlExp.totalExp + baseLvlExp.expToNextLevel * percentage;
+};
 
-  const jobLevel = Math.floor(point.jobLvl);
-  const jobPercentage = point.jobLvl - jobLevel;
+export const getJobExp = (jobLvl: number): number => {
+  const wholeLevel = Math.floor(jobLvl);
+  const percentage = jobLvl - wholeLevel;
 
   const [, jobLvlExp] =
     Object.entries(jobExpChart)
       .toReversed()
-      .find(([level]) => +level === jobLevel) ?? emptyExpEntry;
+      .find(([level]) => +level === wholeLevel) ?? emptyExpEntry;
 
-  const jobExp = jobLvlExp.totalExp + jobLvlExp.expToNextLevel * jobPercentage;
-
-  return {
-    baseExp,
-    jobExp,
-  };
+  return jobLvlExp.totalExp + jobLvlExp.expToNextLevel * percentage;
 };
 
 export const getLevelExpPoint = (point: RawExpPoint): LevelExpPoint => {
@@ -94,12 +91,12 @@ export const calcMonsterCount = (
   const startRawExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
   const targetRawExp = isRawExpPoint(target) ? target : getRawExpPoint(target);
 
-  const baseCount = targetRawExp.baseExp
-    ? (targetRawExp.baseExp - startRawExp.baseExp) / monster.reward.base
-    : 0;
-  const jobCount = targetRawExp.jobExp
-    ? (targetRawExp.jobExp - startRawExp.jobExp) / monster.reward.job
-    : 0;
+  const baseCount =
+    Math.max(0, targetRawExp.baseExp - startRawExp.baseExp) /
+    monster.reward.base;
+
+  const jobCount =
+    Math.max(0, targetRawExp.jobExp - startRawExp.jobExp) / monster.reward.job;
 
   const count = Math.ceil(Math.max(baseCount, jobCount));
   const base = count * monster.reward.base;
@@ -199,20 +196,28 @@ export const willOverlevel = (
   };
 };
 
-export const getMonsterBaseLvlThresholds = (
-  monsterIds: ReadonlyArray<MonsterId>,
-): ReadonlyArray<[MonsterId, number]> =>
-  monsterIds
-    .map((monsterId) => monsters[monsterId])
-    .sort(
-      sortByProp({
-        select: (monster) => monster.prerequisite?.baseLevel ?? 1,
-        compare: numericallyAsc,
-      }),
-    )
-    .map((monster) => [monster.id, monster.prerequisite?.baseLevel ?? 1]);
-
 export const applyRates = (expReward: ExpReward, rates: number): ExpReward => ({
   base: Math.floor(expReward.base * rates),
   job: Math.floor(expReward.job * rates),
+});
+
+export const meetsExpRequirements = (
+  current: RawExpPoint,
+  requirements: RawExpPoint,
+): boolean => {
+  const targetRaw = isRawExpPoint(requirements)
+    ? requirements
+    : getRawExpPoint(requirements);
+
+  return (
+    current.baseExp >= targetRaw.baseExp && current.jobExp >= targetRaw.jobExp
+  );
+};
+
+export const getMinLevelExpPoint = (
+  level: LevelExpPoint,
+  other: LevelExpPoint,
+): LevelExpPoint => ({
+  baseLvl: Math.min(level.baseLvl, other.baseLvl),
+  jobLvl: Math.min(level.jobLvl, other.jobLvl),
 });

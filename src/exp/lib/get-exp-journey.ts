@@ -3,14 +3,12 @@ import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
   type: 'json',
 };
 import {
-  type ExpReward,
-  applyRates,
   calcMonsterCount,
   capExpRewardBase,
   capExpRewardJob,
   getLevelExpPoint,
-  getMonsterBaseLvlThresholds,
   getRawExpPoint,
+  meetsExpRequirements,
 } from '@/exp/calc';
 import {
   EXP_QUEST_RATE,
@@ -18,18 +16,10 @@ import {
   OVERLEVEL_PROTECTION,
 } from '@/exp/constants';
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
-import { type Monster, monsters as monstersBeforeRates } from '@/exp/monsters';
 import {
-  type Quest,
-  getRewardsArray,
-  getTotalExpReward,
-  isExpQuest,
-  quests as questsBeforeRates,
-} from '@/exp/quests';
-import {
-  type ExpJourneQuestStep,
   type ExpJourney,
   type ExpJourneyMonsterStep,
+  type ExpJourneyQuestStep,
   type ExpJourneyStep,
   isMonsterExpJourneyStep,
 } from '@/exp/types/exp-journey';
@@ -38,9 +28,16 @@ import {
   type RawExpPoint,
   isRawExpPoint,
 } from '@/exp/types/exp-point';
+import { type ExpReward, emptyReward } from '@/exp/types/exp-reward';
+import { getMonsterContext } from '@/exp/types/monster-context';
 import { MonsterId } from '@/exp/types/monster-id';
-import { QuestId } from '@/exp/types/quest-id';
-import { isArray } from '@/lib/is-array';
+import {
+  getRewardsArray,
+  getTotalExpReward,
+  isExpQuest,
+} from '@/exp/types/quest';
+import { getQuestContext } from '@/exp/types/quest-context';
+import type { QuestId } from '@/exp/types/quest-id';
 import { PriorityQueue } from '@/lib/priority-queue';
 
 const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
@@ -49,8 +46,8 @@ const maxJobLevel = Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
 type Args = {
   readonly start: ExpPoint;
   readonly target: ExpPoint;
-  readonly allowedQuests: ReadonlyArray<QuestId>;
-  readonly allowedMonsters: ReadonlyArray<MonsterId>;
+  readonly allowedQuests: ReadonlySet<QuestId>;
+  readonly allowedMonsters: ReadonlySet<MonsterId>;
 };
 
 export function* getExpJourney({
@@ -59,39 +56,12 @@ export function* getExpJourney({
   allowedMonsters,
   allowedQuests,
 }: Args): Generator<ExpJourney> {
-  const quests = Object.fromEntries(
-    Object.entries(questsBeforeRates).map<[QuestId, Quest]>(
-      ([questId, quest]) => [
-        questId as QuestId,
-        {
-          ...quest,
-          ...(isExpQuest(quest)
-            ? {
-                ...quest,
-                reward: isArray(quest.reward)
-                  ? quest.reward.map((reward) =>
-                      applyRates(reward, EXP_QUEST_RATE),
-                    )
-                  : applyRates(quest.reward, EXP_QUEST_RATE),
-              }
-            : {}),
-        },
-      ],
-    ),
-  ) as typeof questsBeforeRates;
-
-  const monsters = Object.fromEntries(
-    Object.entries(monstersBeforeRates).map<[MonsterId, Monster]>(
-      ([monsterId, monster]) => [
-        monsterId as MonsterId,
-        { ...monster, reward: applyRates(monster.reward, MONSTER_RATE) },
-      ],
-    ),
-  ) as typeof monstersBeforeRates;
+  const quests = getQuestContext(EXP_QUEST_RATE);
+  const monsters = getMonsterContext(allowedMonsters, MONSTER_RATE);
 
   const startExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
   const targetExp = isRawExpPoint(target) ? target : getRawExpPoint(target);
-  const monsterBaseLvlThresholds = getMonsterBaseLvlThresholds(allowedMonsters);
+  const monsterBaseLvlThresholds = monsters.thresholds;
 
   // Graph representation
   const graph = new Map<QuestId, ReadonlyArray<QuestId>>();
@@ -102,16 +72,19 @@ export function* getExpJourney({
     inDegree.set(questId, 0);
   }
 
-  for (const questId of allowedQuests) {
-    const quest = quests[questId];
+  const questsToDo = allowedQuests
+    .values()
+    .map((questId) => quests.get(questId))
+    .filter((quest) => !!quest);
 
+  for (const quest of questsToDo) {
     if (!isExpQuest(quest)) {
       continue;
     }
 
     for (const prereqId of quest.prerequisite?.questIds ?? []) {
-      graph.get(prereqId).push(questId);
-      inDegree.set(questId, (inDegree.get(questId) || 0) + 1);
+      graph.set(prereqId, [...(graph.get(prereqId) ?? []), quest.id]);
+      inDegree.set(quest.id, (inDegree.get(quest.id) || 0) + 1);
     }
   }
 
@@ -156,7 +129,7 @@ export function* getExpJourney({
       monsterIndex: 0,
       monsterId: MonsterId.Spore,
     },
-    heuristic(startExp, monsters[MonsterId.Spore].reward),
+    heuristic(startExp, monsters.get(MonsterId.Spore)?.reward ?? emptyReward),
   );
 
   let minKills = Number.POSITIVE_INFINITY;
@@ -172,13 +145,7 @@ export function* getExpJourney({
     pq.clear((item) => item.kills >= newMinKills);
   };
 
-  while (!pq.isEmpty()) {
-    const queueItem = pq.dequeue();
-
-    if (!queueItem) {
-      break;
-    }
-
+  for (const queueItem of pq) {
     const {
       exp,
       kills,
@@ -198,7 +165,7 @@ export function* getExpJourney({
     }
 
     for (const questId of available) {
-      const quest = quests[questId];
+      const quest = quests.get(questId);
 
       if (!quest) {
         continue;
@@ -245,14 +212,14 @@ export function* getExpJourney({
           newSteps.pop();
           newSteps.push({
             ...step,
-            count: lastStep.count + step.count,
+            kills: lastStep.kills + step.kills,
           });
         } else {
           newSteps.push(step);
         }
       };
 
-      const addQuestStep = (step: ExpJourneQuestStep): void => {
+      const addQuestStep = (step: ExpJourneyQuestStep): void => {
         newSteps.push(step);
       };
 
@@ -260,11 +227,16 @@ export function* getExpJourney({
         const [count, reward] = calcMonsterCount(
           newExp,
           target,
-          monsters[monsterId],
+          monsters.get(monsterId),
         );
 
         applyExp(reward, true, true);
-        addMonsterStep({ monsterId, count, expPoint: newLevel });
+        addMonsterStep({
+          monsterId,
+          monsterName: monsters.get(monsterId)?.name,
+          kills: count,
+          expPoint: newLevel,
+        });
         newKills += count;
       };
 
@@ -273,12 +245,12 @@ export function* getExpJourney({
           const [nextMonsterId, nextMonsterThreshold] =
             monsterBaseLvlThresholds[newMonsterIndex + 1]!;
 
-          const nextMonster = monsters[nextMonsterId];
+          const nextMonster = monsters.get(nextMonsterId);
           const nextMonsterQuestId = nextMonster.prerequisite?.questId;
 
           if (
             nextMonsterQuestId &&
-            allowedQuests.includes(nextMonsterQuestId) &&
+            allowedQuests.has(nextMonsterQuestId) &&
             !completed.has(nextMonsterQuestId)
           ) {
             // did not complete the quest
@@ -331,7 +303,7 @@ export function* getExpJourney({
           });
         }
 
-        const monster = monsters[quest.kills.monsterId];
+        const monster = monsters.get(quest.kills.monsterId);
 
         return getRawExpPoint({
           baseLvl: monster.prerequisite?.baseLevel ?? 1,
@@ -356,7 +328,7 @@ export function* getExpJourney({
         const [targetLevel, { reachedMaxBase, reachedMaxJob }] =
           findMinimumLevelForExpReward(
             rewards,
-            () => monsters[newMonsterId],
+            () => monsters.get(newMonsterId),
             newExp,
           );
 
@@ -391,7 +363,7 @@ export function* getExpJourney({
           );
         }
       } else {
-        const monster = monsters[quest.kills.monsterId];
+        const monster = monsters.get(quest.kills.monsterId);
 
         applyExp(
           {
@@ -438,7 +410,7 @@ export function* getExpJourney({
           monsterIndex: newMonsterIndex,
           monsterId: newMonsterId,
         },
-        newKills + heuristic(newExp, monsters[newMonsterId].reward),
+        newKills + heuristic(newExp, monsters.get(newMonsterId).reward),
       );
     }
 
@@ -446,7 +418,7 @@ export function* getExpJourney({
       const [killsNeeded, receivedExp] = calcMonsterCount(
         exp,
         targetExp,
-        monsters[monsterId],
+        monsters.get(monsterId),
       );
 
       const newKills = kills + killsNeeded;
@@ -461,7 +433,8 @@ export function* getExpJourney({
           ...steps,
           {
             monsterId,
-            count: killsNeeded,
+            monsterName: monsters.get(monsterId)?.name,
+            kills: killsNeeded,
             expPoint: getLevelExpPoint(finishedExp),
           } satisfies ExpJourneyMonsterStep,
         ];
@@ -482,56 +455,4 @@ type QueuedQuest = {
   readonly steps: ReadonlyArray<ExpJourneyStep>;
   readonly monsterIndex: number;
   readonly monsterId: MonsterId;
-};
-
-const meetsExpRequirements = (
-  current: RawExpPoint,
-  requirements: RawExpPoint,
-): boolean => {
-  const targetRaw = isRawExpPoint(requirements)
-    ? requirements
-    : getRawExpPoint(requirements);
-
-  return (
-    current.baseExp >= targetRaw.baseExp && current.jobExp >= targetRaw.jobExp
-  );
-};
-
-let generator: ReturnType<typeof getExpJourney> | null = null; // Store generator instance
-let start: DOMHighResTimeStamp;
-let end: DOMHighResTimeStamp;
-
-self.onmessage = (event) => {
-  const { baseLvl, jobLvl } = event.data;
-  if (typeof baseLvl === 'number' && typeof jobLvl === 'number') {
-    start = performance.now();
-    generator = getExpJourney({
-      start: { baseLvl, jobLvl },
-      target: { jobLvl: 50, baseLvl: 1 },
-      // allowedQuests: Object.values(QuestId).filter(
-      //   (q) =>
-      //     q !== QuestId.LostChild &&
-      //     q !== QuestId.RachelSanctuary1 &&
-      //     q !== QuestId.RachelSanctuary2 &&
-      //     q !== QuestId.RachelSanctuarySiroma,
-      // ),
-      allowedQuests: Object.values(QuestId),
-      allowedMonsters: [
-        MonsterId.Spore,
-        // MonsterId.Metaling,
-        MonsterId.Muka,
-        MonsterId.Wolf,
-      ],
-    });
-  }
-
-  if (generator) {
-    for (const value of generator) {
-      self.postMessage({ value, done: false });
-    }
-
-    end = performance.now();
-    const seconds = (end - start) / 1000;
-    self.postMessage({ value: seconds, done: true });
-  }
 };

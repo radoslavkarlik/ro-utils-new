@@ -1,6 +1,7 @@
+import { applyRates } from '@/exp/calc';
+import type { ExpReward } from '@/exp/types/exp-reward';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
-import type { ExpReward } from './calc';
 
 type MonsterPrerequisite = {
   readonly baseLevel?: number;
@@ -14,7 +15,7 @@ export type Monster = {
   readonly prerequisite?: MonsterPrerequisite;
 };
 
-export const monsters: Record<MonsterId, Monster> = {
+const monsters: Record<MonsterId, Monster> = {
   [MonsterId.Spore]: {
     id: MonsterId.Spore,
     name: 'Spore',
@@ -66,3 +67,13 @@ export const monsters: Record<MonsterId, Monster> = {
     prerequisite: { baseLevel: 66 },
   },
 };
+
+export const getMonsters = (rates: number): ReadonlyMap<MonsterId, Monster> =>
+  new Map(
+    Object.entries(monsters).map<[MonsterId, Monster]>(
+      ([monsterId, monster]) => [
+        monsterId as MonsterId,
+        { ...monster, reward: applyRates(monster.reward, rates) },
+      ],
+    ),
+  );

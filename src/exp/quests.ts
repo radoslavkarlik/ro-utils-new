@@ -1,35 +1,11 @@
+import { applyRates } from '@/exp/calc';
 import { MIN_EXP_REWARD } from '@/exp/constants';
 import { MonsterId } from '@/exp/types/monster-id';
+import { type Quest, isExpQuest } from '@/exp/types/quest';
 import { QuestId } from '@/exp/types/quest-id';
 import { isArray } from '@/lib/is-array';
-import type { ExpReward } from './calc';
 
-export type QuestPrerequisite = {
-  readonly baseLevel?: number;
-  readonly jobLevel?: number;
-  readonly questIds?: ReadonlyArray<QuestId>;
-};
-
-export type ExpQuest = {
-  readonly id: QuestId;
-  readonly prerequisite?: QuestPrerequisite;
-  readonly reward: ExpReward | ReadonlyArray<ExpReward>;
-};
-
-export type MonsterQuest = {
-  readonly id: QuestId;
-  readonly kills: {
-    readonly monsterId: MonsterId;
-    readonly count: number;
-  };
-};
-
-export type Quest = ExpQuest | MonsterQuest;
-
-export const isExpQuest = (quest: Quest): quest is ExpQuest =>
-  !('kills' in quest);
-
-export const quests: Record<QuestId, Quest> = {
+const quests: Record<QuestId, Quest> = {
   [QuestId.AcolyteTrainingZombie]: {
     id: QuestId.AcolyteTrainingZombie,
     kills: {
@@ -122,17 +98,17 @@ export const quests: Record<QuestId, Quest> = {
   },
 };
 
-export const getRewardsArray = (
-  reward: ExpReward | ReadonlyArray<ExpReward>,
-): ReadonlyArray<ExpReward> => (isArray(reward) ? reward : [reward]);
-
-export const getTotalExpReward = (
-  rewards: ReadonlyArray<ExpReward>,
-): ExpReward =>
-  rewards.reduce<ExpReward>(
-    (total, reward) => ({
-      base: total.base + reward.base,
-      job: total.job + reward.job,
-    }),
-    { base: 0, job: 0 },
+export const getQuests = (rates: number): ReadonlyMap<QuestId, Quest> =>
+  new Map(
+    Object.entries(quests).map<[QuestId, Quest]>(([questId, quest]) => [
+      questId as QuestId,
+      isExpQuest(quest)
+        ? {
+            ...quest,
+            reward: isArray(quest.reward)
+              ? quest.reward.map((reward) => applyRates(reward, rates))
+              : applyRates(quest.reward, rates),
+          }
+        : quest,
+    ]),
   );

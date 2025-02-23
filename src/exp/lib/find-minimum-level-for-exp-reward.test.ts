@@ -1,8 +1,10 @@
 import { MIN_EXP_REWARD } from '@/exp/constants';
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
-import { monsters } from '@/exp/monsters';
+import { getMonsters } from '@/exp/monsters';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
 import { MonsterId } from '@/exp/types/monster-id';
+
+const monsters = getMonsters(1);
 
 describe('findMinimumLevelForExpReward', () => {
   test('returns correct base level for base exp only', () => {
@@ -45,7 +47,7 @@ describe('findMinimumLevelForExpReward', () => {
         { base: MIN_EXP_REWARD, job: 1_000 },
         { base: 5_000, job: 3_000 },
       ],
-      () => monsters[MonsterId.Spore],
+      () => monsters.get(MonsterId.Spore),
     );
 
     expect(result).toEqual({

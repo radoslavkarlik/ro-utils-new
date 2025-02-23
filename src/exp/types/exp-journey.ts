@@ -5,15 +5,16 @@ import type { QuestId } from '@/exp/types/quest-id';
 export type ExpJourneyMonsterStep = {
   readonly expPoint: LevelExpPoint;
   readonly monsterId: MonsterId;
-  readonly count: number;
+  readonly monsterName: string;
+  readonly kills: number;
 };
 
-export type ExpJourneQuestStep = {
+export type ExpJourneyQuestStep = {
   readonly expPoint: LevelExpPoint;
   readonly questId: QuestId;
 };
 
-export type ExpJourneyStep = ExpJourneyMonsterStep | ExpJourneQuestStep;
+export type ExpJourneyStep = ExpJourneyMonsterStep | ExpJourneyQuestStep;
 
 export type ExpJourney = ReadonlyArray<ExpJourneyStep>;
 

@@ -12,3 +12,8 @@ export type ExpPoint = RawExpPoint | LevelExpPoint;
 
 export const isRawExpPoint = (point: Partial<ExpPoint>): point is RawExpPoint =>
   'baseExp' in point;
+
+export const emptyRawExp: RawExpPoint = {
+  baseExp: 0,
+  jobExp: 0,
+};
