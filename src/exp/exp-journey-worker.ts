@@ -39,5 +39,3 @@ self.onmessage = (event) => {
   const seconds = (end - start) / 1000;
   self.postMessage({ value: seconds, done: true });
 };
-
-self.onmessage({ data: { baseLvl: 11, jobLvl: 1 } });

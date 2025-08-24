@@ -1,6 +1,7 @@
-import { type ExpReward, capExpReward, getRawExpPoint } from '@/exp/calc';
+import { capExpReward, getRawExpPoint } from '@/exp/calc';
 import { MIN_EXP_REWARD } from '@/exp/constants';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
+import { ExpReward } from './types/exp-reward';
 
 describe('capExpReward', () => {
   test('returns cap exp when overlevel', () => {

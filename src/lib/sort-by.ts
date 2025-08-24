@@ -5,13 +5,13 @@ export const sortByDesc =
   (a: TProp, b: TProp): number =>
     sortBy(b, a);
 
-type SortByPropArgs<TData extends Record<string, unknown>, TProp> = {
+type SortByPropArgs<TData, TProp> = {
   readonly select: (data: TData) => TProp;
   readonly compare: SortBy<TProp>;
 };
 
 export const sortByProp =
-  <TData extends Record<string, unknown>, TProp = unknown>({
+  <TData, TProp = unknown>({
     select,
     compare,
   }: SortByPropArgs<TData, TProp>): SortBy<TData> =>
