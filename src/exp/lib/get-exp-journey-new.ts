@@ -3,7 +3,6 @@ import { EXP_QUEST_RATE, MONSTER_RATE } from '@/exp/constants';
 import { compareQueueSteps } from '@/exp/lib/compare-queue-steps';
 import { estimateFinalKillCount } from '@/exp/lib/estimate-final-kill-count';
 import { exploreQueueStep } from '@/exp/lib/explore-queue-step';
-import { getQuests } from '@/exp/quests';
 import type { ExpJourney } from '@/exp/types/exp-journey';
 import { type ExpPoint, isRawExpPoint } from '@/exp/types/exp-point';
 import { getMonsterContext } from '@/exp/types/monster-context';
@@ -11,6 +10,7 @@ import type { MonsterId } from '@/exp/types/monster-id';
 import type { QuestId } from '@/exp/types/quest-id';
 import type { QueueStep } from '@/exp/types/queue-step';
 import { PriorityQueue } from '@/lib/priority-queue';
+import { getQuestContext } from '../types/quest-context';
 
 type Args = {
   readonly start: ExpPoint;
@@ -25,7 +25,7 @@ export function* getExpJourney({
   allowedQuests,
   allowedMonsters,
 }: Args): Generator<ExpJourney> {
-  const quests = getQuests(EXP_QUEST_RATE);
+  const quests = getQuestContext(EXP_QUEST_RATE);
   const monsters = getMonsterContext(allowedMonsters, MONSTER_RATE);
 
   const startExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
@@ -36,10 +36,16 @@ export function* getExpJourney({
     .filter((questId) => !quests.get(questId)?.prerequisite?.questIds?.length)
     .toArray();
 
+  const initialMonsterId = monsters.thresholds[0]?.[0]
+
+  if (!initialMonsterId) {
+    throw new Error('Initial monster id not found: ' + initialMonsterId);
+  }
+
   const initialStep: QueueStep = {
     exp: startExp,
     monster: {
-      monster: monsters.get(monsters.thresholds[0]?.[0]),
+      monster: monsters.get(initialMonsterId),
       isLast: monsters.thresholds.length === 1,
       thresholdIndex: 0,
     },
@@ -68,6 +74,7 @@ export function* getExpJourney({
         bestStep = step;
 
         yield step.journey;
+        // TODO maybe clear even when equal
         queue.clear((step) => step.kills > bestStep.kills);
       }
     } else {

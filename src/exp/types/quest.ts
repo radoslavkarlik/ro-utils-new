@@ -10,12 +10,14 @@ export type QuestPrerequisite = {
 };
 
 export type ExpQuest = {
+  readonly type: 'exp';
   readonly id: QuestId;
   readonly prerequisite?: QuestPrerequisite;
   readonly reward: ExpReward | ReadonlyArray<ExpReward>;
 };
 
 export type MonsterQuest = {
+  readonly type: 'monster';
   readonly id: QuestId;
   readonly prerequisite?: undefined;
   readonly kills: {
@@ -27,7 +29,7 @@ export type MonsterQuest = {
 export type Quest = ExpQuest | MonsterQuest;
 
 export const isExpQuest = (quest: Quest): quest is ExpQuest =>
-  !('kills' in quest);
+  quest.type === 'exp'
 
 export const getRewardsArray = (
   reward: ExpReward | ReadonlyArray<ExpReward>,

@@ -1,7 +1,7 @@
 import {
   applyRates,
   getLevelExpPoint,
-  getMinLevelExpPoint,
+  getMaxLevelExpPoint,
   getRawExpPoint,
   meetsExpRequirements,
 } from '@/exp/calc';
@@ -9,7 +9,7 @@ import { addReward } from '@/exp/lib/add-reward';
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
 import { getKillsJourney } from '@/exp/lib/get-kills-journey';
 import { mergeJourneys } from '@/exp/lib/merge-journeys';
-import type { ExpJourney, ExpJourneyQuestStep } from '@/exp/types/exp-journey';
+import type { ExpJourney } from '@/exp/types/exp-journey';
 import type { RawExpPoint } from '@/exp/types/exp-point';
 import {
   getRewardsArray,
@@ -35,7 +35,7 @@ export const performQuest =
           () => previousStep.monster.monster,
         );
 
-        const minQuestLvl = getMinLevelExpPoint(minimumOverlevel, {
+        const minQuestLvl = getMaxLevelExpPoint(minimumOverlevel, {
           baseLvl: quest.prerequisite?.baseLevel ?? 1,
           jobLvl: quest.prerequisite?.jobLevel ?? 1,
         });
@@ -70,6 +70,14 @@ export const performQuest =
     const newLevel = extraJourney?.[extraJourney.length - 1]?.expPoint;
     const newExp = newLevel ? getRawExpPoint(newLevel) : previousStep.exp;
 
+    const newAvailableQuests = new Set(
+          previousStep.availableQuests
+            .values()
+            .filter((available) => available !== questId),
+        );
+
+        const newCompletedQuests = new Set(previousStep.completedQuests).add(questId);
+
     if (isExpQuest(quest)) {
       const rewardsArray = getRewardsArray(quest.reward);
       const totalQuestReward = getTotalExpReward(rewardsArray);
@@ -77,21 +85,18 @@ export const performQuest =
 
       const step: QueueStep = {
         ...previousStep,
-        availableQuests: new Set(
-          previousStep.availableQuests
-            .values()
-            .filter((available) => available !== questId),
-        ),
-        completedQuests: new Set(previousStep.completedQuests).add(questId),
+        availableQuests: newAvailableQuests,
+        completedQuests: newCompletedQuests,
         exp: finishedExp,
         kills: previousStep.kills + extraKills,
         monster: currentMonster ?? previousStep.monster,
         journey: [
           ...journeyBeforeQuest,
           {
+            type: 'quest',
             expPoint: getLevelExpPoint(finishedExp),
             questId,
-          } satisfies ExpJourneyQuestStep,
+          },
         ],
       };
 
@@ -101,25 +106,22 @@ export const performQuest =
     const monster = previousStep.context.monsters.get(quest.kills.monsterId);
 
     const reward = applyRates(monster.reward, quest.kills.count);
-    const newExp2 = addReward(newExp, reward);
+    const finishedExp = addReward(newExp, reward);
 
     return {
       ...previousStep,
-      availableQuests: new Set(
-        previousStep.availableQuests
-          .values()
-          .filter((available) => available !== questId),
-      ),
-      completedQuests: new Set(previousStep.completedQuests).add(questId),
-      exp: newExp2,
+      availableQuests: newAvailableQuests,
+      completedQuests: newCompletedQuests,
+      exp: finishedExp,
       kills: previousStep.kills + extraKills + quest.kills.count,
-      monster: previousStep.monster,
+      monster: currentMonster ?? previousStep.monster,
       journey: [
         ...journeyBeforeQuest,
         {
-          expPoint: getLevelExpPoint(newExp2),
+          type: 'quest',
+          expPoint: getLevelExpPoint(finishedExp),
           questId,
-        } satisfies ExpJourneyQuestStep,
+        },
       ],
     };
   };

@@ -11,6 +11,7 @@ import { getRewardsArray } from '@/exp/types/quest';
 
 export const findMinimumLevelForExpReward = (
   reward: ExpReward | ReadonlyArray<ExpReward>,
+  // TODO return multiple monsters, work with thresholds
   getMonster?: (maxBaseLevel: number) => Monster,
   startingExp?: RawExpPoint,
 ): [
@@ -53,6 +54,7 @@ export const findMinimumLevelForExpReward = (
 
     expLoop: for (
       let baseExp = startExp.baseExp;
+      // TODO is equal correct here?
       baseExp <= endExp.baseExp;
       baseExp += monster.reward.base
     ) {
@@ -190,6 +192,7 @@ const _findMinimumLevelForExpReward = (
       return [+bLvl, false];
     }
 
+    // TODO dont use infinity, use max level? or 1?
     return [Number.POSITIVE_INFINITY, false];
   })();
 

@@ -18,6 +18,6 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    setupFiles: 'tsconfig.test.json',
+    setupFiles: 'tsconfig.json',
   },
 });

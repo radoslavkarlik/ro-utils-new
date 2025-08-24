@@ -9,7 +9,7 @@ export const addMonsterJourneyStep = (
   step: ExpJourneyMonsterStep,
 ): ExpJourney => {
   const lastStep = journey[journey.length - 1];
-  const newSteps = [...journey];
+  const newSteps = journey.slice();
 
   if (
     lastStep &&

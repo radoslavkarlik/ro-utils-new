@@ -7,6 +7,7 @@ import { isArray } from '@/lib/is-array';
 
 const quests: Record<QuestId, Quest> = {
   [QuestId.AcolyteTrainingZombie]: {
+    type: 'monster',
     id: QuestId.AcolyteTrainingZombie,
     kills: {
       monsterId: MonsterId.Zombie,
@@ -14,6 +15,7 @@ const quests: Record<QuestId, Quest> = {
     },
   },
   [QuestId.AcolyteTraining]: {
+    type: 'exp',
     id: QuestId.AcolyteTraining,
     reward: [
       { base: 2_000, job: 2_000 },
@@ -23,6 +25,7 @@ const quests: Record<QuestId, Quest> = {
     prerequisite: { jobLevel: 17, questIds: [QuestId.AcolyteTrainingZombie] },
   },
   [QuestId.Friendship]: {
+    type: 'exp',
     id: QuestId.Friendship,
     reward: [
       { base: 200_000, job: MIN_EXP_REWARD },
@@ -31,6 +34,7 @@ const quests: Record<QuestId, Quest> = {
     prerequisite: { baseLevel: 50 },
   },
   [QuestId.Bruspetti]: {
+    type: 'exp',
     id: QuestId.Bruspetti,
     reward: {
       base: 450_000,
@@ -39,6 +43,7 @@ const quests: Record<QuestId, Quest> = {
     prerequisite: { baseLevel: 50, questIds: [QuestId.Friendship] },
   },
   [QuestId.LostChild]: {
+    type: 'exp',
     id: QuestId.LostChild,
     reward: {
       base: 900_000,
@@ -47,6 +52,7 @@ const quests: Record<QuestId, Quest> = {
     prerequisite: { baseLevel: 60 },
   },
   [QuestId.RachelSanctuary1]: {
+    type: 'exp',
     id: QuestId.RachelSanctuary1,
     reward: {
       base: 200_000,
@@ -55,6 +61,7 @@ const quests: Record<QuestId, Quest> = {
     prerequisite: { baseLevel: 60, questIds: [QuestId.LostChild] },
   },
   [QuestId.RachelSanctuarySiroma]: {
+    type: 'monster',
     id: QuestId.RachelSanctuarySiroma,
     kills: {
       monsterId: MonsterId.Siroma,
@@ -62,6 +69,7 @@ const quests: Record<QuestId, Quest> = {
     },
   },
   [QuestId.RachelSanctuary2]: {
+    type: 'exp',
     id: QuestId.RachelSanctuary2,
     reward: {
       base: 900_000,
@@ -73,6 +81,7 @@ const quests: Record<QuestId, Quest> = {
     },
   },
   [QuestId.EyeOfHellion]: {
+    type: 'exp',
     id: QuestId.EyeOfHellion,
     reward: {
       base: 1_000_000,
@@ -81,6 +90,7 @@ const quests: Record<QuestId, Quest> = {
     prerequisite: { baseLevel: 60 },
   },
   [QuestId.CurseOfGaebolg]: {
+    type: 'exp',
     id: QuestId.CurseOfGaebolg,
     reward: {
       base: 1_600_000,
@@ -89,6 +99,7 @@ const quests: Record<QuestId, Quest> = {
     prerequisite: { baseLevel: 60 },
   },
   [QuestId.CrowOfDestiny]: {
+    type: 'exp',
     id: QuestId.CrowOfDestiny,
     reward: {
       base: 900_000,

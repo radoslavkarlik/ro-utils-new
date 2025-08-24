@@ -232,6 +232,7 @@ export function* getExpJourney({
 
         applyExp(reward, true, true);
         addMonsterStep({
+          type: 'monster',
           monsterId,
           monsterName: monsters.get(monsterId)?.name,
           kills: count,
@@ -376,6 +377,7 @@ export function* getExpJourney({
       }
 
       addQuestStep({
+        type: 'quest',
         questId,
         expPoint: newLevel,
       });
@@ -388,7 +390,7 @@ export function* getExpJourney({
       const newInDegree = new Map(inDegree);
 
       // Reduce in-degree for dependent quests and add them to available set if they become unlocked
-      for (const dependent of graph.get(quest.id)) {
+      for (const dependent of graph.get(quest.id) ?? []) {
         newInDegree.set(
           dependent,
           Math.max(0, (newInDegree.get(dependent) ?? 0) - 1),
@@ -432,6 +434,7 @@ export function* getExpJourney({
         const newSteps = [
           ...steps,
           {
+            type: 'monster',
             monsterId,
             monsterName: monsters.get(monsterId)?.name,
             kills: killsNeeded,

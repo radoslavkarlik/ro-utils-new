@@ -2,7 +2,6 @@ import { calcMonsterCount, getLevelExpPoint, getRawExpPoint } from '@/exp/calc';
 import { addReward } from '@/exp/lib/add-reward';
 import type { Monster } from '@/exp/monsters';
 import type {
-  ExpJourney,
   ExpJourneyMonsterStep,
 } from '@/exp/types/exp-journey';
 import type { RawExpPoint } from '@/exp/types/exp-point';
@@ -19,7 +18,7 @@ export const getKillsJourney = ({
   startExp,
   targetExp,
   previousQueueStep,
-}: Args): [ExpJourney, totalKills: number, CurrentMonster] => {
+}: Args): [ReadonlyArray<ExpJourneyMonsterStep>, totalKills: number, CurrentMonster] => {
   const [steps, currentMonster] = getSteps(
     startExp,
     targetExp,
@@ -125,6 +124,7 @@ const getStep = (
   const newExp = addReward(startExp, reward);
 
   return {
+    type: 'monster',
     monsterId: monster.id,
     monsterName: monster.name,
     kills,

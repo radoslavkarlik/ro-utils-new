@@ -26,17 +26,17 @@ export const getMonsterContext = (
   const thresholds = allowedMonsters
     .values()
     .map(get)
-    .toArray()
-    .sort(
-      sortByProp({
-        select: (monster) => monster.prerequisite?.baseLevel ?? 1,
-        compare: numericallyAsc,
-      }),
-    )
     .map<[MonsterId, number]>((monster) => [
       monster.id,
       monster.prerequisite?.baseLevel ?? 1,
-    ]);
+    ])
+    .toArray()
+    .sort(
+      sortByProp({
+        select: ([, baseLevel]) => baseLevel,
+        compare: numericallyAsc,
+      }),
+    )
 
   return {
     get,

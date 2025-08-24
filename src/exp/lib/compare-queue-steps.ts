@@ -11,8 +11,6 @@ export const compareQueueSteps = (
     return killsDiff;
   }
 
-  // return other.completedQuests.size - questStep.completedQuests.size;
-
   return numericallyAsc(
     questStep.completedQuests.size,
     other.completedQuests.size,

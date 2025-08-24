@@ -99,15 +99,11 @@ export const calcMonsterCount = (
     Math.max(0, targetRawExp.jobExp - startRawExp.jobExp) / monster.reward.job;
 
   const count = Math.ceil(Math.max(baseCount, jobCount));
-  const base = count * monster.reward.base;
-  const job = count * monster.reward.job;
+  const reward = applyRates(monster.reward, count)
 
   return [
     count,
-    {
-      base,
-      job,
-    },
+    reward,
   ];
 };
 
@@ -205,12 +201,8 @@ export const meetsExpRequirements = (
   current: RawExpPoint,
   requirements: RawExpPoint,
 ): boolean => {
-  const targetRaw = isRawExpPoint(requirements)
-    ? requirements
-    : getRawExpPoint(requirements);
-
   return (
-    current.baseExp >= targetRaw.baseExp && current.jobExp >= targetRaw.jobExp
+    current.baseExp >= requirements.baseExp && current.jobExp >= requirements.jobExp
   );
 };
 
@@ -220,4 +212,12 @@ export const getMinLevelExpPoint = (
 ): LevelExpPoint => ({
   baseLvl: Math.min(level.baseLvl, other.baseLvl),
   jobLvl: Math.min(level.jobLvl, other.jobLvl),
+});
+
+export const getMaxLevelExpPoint = (
+  level: LevelExpPoint,
+  other: LevelExpPoint,
+): LevelExpPoint => ({
+  baseLvl: Math.max(level.baseLvl, other.baseLvl),
+  jobLvl: Math.max(level.jobLvl, other.jobLvl),
 });
