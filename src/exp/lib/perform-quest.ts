@@ -20,8 +20,8 @@ import type { QuestId } from '@/exp/types/quest-id';
 import type { CurrentMonster, QueueStep } from '@/exp/types/queue-step';
 
 export const performQuest =
-  (previousStep: QueueStep) =>
-  (questId: QuestId): QueueStep => {
+  (previousStep: QueueStep, bestStepKills: number) =>
+  (questId: QuestId): QueueStep | null => {
     const quest = previousStep.context.quests.get(questId);
 
     // TODO prereq for exp and monster quest
@@ -61,6 +61,10 @@ export const performQuest =
         targetExp: minReqExp,
         previousQueueStep: previousStep,
       });
+
+      if ((previousStep.kills + extraKills) >= bestStepKills) {
+        return null;
+      }
     }
 
     const journeyBeforeQuest = extraJourney
@@ -70,13 +74,18 @@ export const performQuest =
     const newLevel = extraJourney?.[extraJourney.length - 1]?.expPoint;
     const newExp = newLevel ? getRawExpPoint(newLevel) : previousStep.exp;
 
-    const newAvailableQuests = new Set(
-          previousStep.availableQuests
-            .values()
-            .filter((available) => available !== questId),
-        );
+    const newCompletedQuests = new Set(previousStep.completedQuests).add(questId);
 
-        const newCompletedQuests = new Set(previousStep.completedQuests).add(questId);
+    const unlockedQuests = new Set(previousStep.lockedQuests.values().map(previousStep.context.quests.get).filter(quest => !quest.prerequisite?.questIds || quest.prerequisite.questIds.every(questId => newCompletedQuests.has(questId))).map(quest => quest.id));
+
+    const newAvailableQuests = new Set([
+      ...previousStep.availableQuests
+        .values()
+        .filter((available) => available !== questId),
+      ...unlockedQuests,
+    ])
+
+    const newLockedQuests = new Set(previousStep.lockedQuests.values().filter(questId => !unlockedQuests.has(questId)))
 
     if (isExpQuest(quest)) {
       const rewardsArray = getRewardsArray(quest.reward);
@@ -87,6 +96,7 @@ export const performQuest =
         ...previousStep,
         availableQuests: newAvailableQuests,
         completedQuests: newCompletedQuests,
+        lockedQuests: newLockedQuests,
         exp: finishedExp,
         kills: previousStep.kills + extraKills,
         monster: currentMonster ?? previousStep.monster,
@@ -99,7 +109,7 @@ export const performQuest =
           },
         ],
       };
-
+      
       return step;
     }
 
@@ -108,10 +118,11 @@ export const performQuest =
     const reward = applyRates(monster.reward, quest.kills.count);
     const finishedExp = addReward(newExp, reward);
 
-    return {
+      const step: QueueStep = {
       ...previousStep,
       availableQuests: newAvailableQuests,
       completedQuests: newCompletedQuests,
+      lockedQuests: newLockedQuests,
       exp: finishedExp,
       kills: previousStep.kills + extraKills + quest.kills.count,
       monster: currentMonster ?? previousStep.monster,
@@ -123,5 +134,7 @@ export const performQuest =
           questId,
         },
       ],
-    };
+    }
+
+    return step;
   };

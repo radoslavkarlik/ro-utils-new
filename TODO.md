@@ -35,3 +35,13 @@ toggle to allow some wasted exp fixed or % or max level
 optimize will overlevel - can probably be replaced with cap exp reward and compare
 
 goal 50 job
+
+
+
+fix formatter and linter
+
+.....
+
+ignores monster switch quest prereq
+ignores quest prereqs???
+add time metric, like how long it takes to kill mobs and rather use that instead of total kills

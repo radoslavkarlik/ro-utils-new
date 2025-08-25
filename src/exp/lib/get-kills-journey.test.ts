@@ -21,9 +21,10 @@ describe('getKillsJourney', () => {
         const queueStep: QueueStep = {
             availableQuests: new Set(),
             completedQuests: new Set([QuestId.AcolyteTraining]),
+            lockedQuests: new Set(),
             context: {
                 monsters: monsterContext,
-                quests: getQuestContext(1),
+                quests: getQuestContext(new Set(), 1),
                 targetExp,
             },
             exp: startExp,

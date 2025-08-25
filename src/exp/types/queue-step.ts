@@ -16,6 +16,7 @@ export type QueueStep = {
   readonly kills: number;
   readonly completedQuests: ReadonlySet<QuestId>;
   readonly availableQuests: ReadonlySet<QuestId>;
+  readonly lockedQuests: ReadonlySet<QuestId>;
   readonly journey: ExpJourney;
   readonly context: JourneyContext;
 };

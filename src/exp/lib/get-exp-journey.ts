@@ -1,7 +1,7 @@
 import baseExpChart from '@/data/base-exp-chart.json' with { type: 'json' };
-import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
-  type: 'json',
-};
+// import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
+//   type: 'json',
+// };
 import {
   calcMonsterCount,
   capExpRewardBase,
@@ -41,7 +41,7 @@ import type { QuestId } from '@/exp/types/quest-id';
 import { PriorityQueue } from '@/lib/priority-queue';
 
 const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
-const maxJobLevel = Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
+// const maxJobLevel = Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
 
 type Args = {
   readonly start: ExpPoint;
@@ -56,7 +56,7 @@ export function* getExpJourney({
   allowedMonsters,
   allowedQuests,
 }: Args): Generator<ExpJourney> {
-  const quests = getQuestContext(EXP_QUEST_RATE);
+  const quests = getQuestContext(allowedQuests, EXP_QUEST_RATE);
   const monsters = getMonsterContext(allowedMonsters, MONSTER_RATE);
 
   const startExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
@@ -72,10 +72,7 @@ export function* getExpJourney({
     inDegree.set(questId, 0);
   }
 
-  const questsToDo = allowedQuests
-    .values()
-    .map((questId) => quests.get(questId))
-    .filter((quest) => !!quest);
+  const questsToDo = quests.allQuests
 
   for (const quest of questsToDo) {
     if (!isExpQuest(quest)) {

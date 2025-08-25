@@ -4,9 +4,10 @@ import type { QuestId } from '@/exp/types/quest-id';
 
 export type QuestContext = {
   readonly get: (id: QuestId) => Quest;
+  readonly allQuests: ReadonlyArray<Quest>;
 };
 
-export const getQuestContext = (rates: number): QuestContext => {
+export const  getQuestContext = (availableQuests: ReadonlySet<QuestId>, rates: number): QuestContext => {
   const quests = getQuests(rates);
 
   const get = (id: QuestId): Quest => {
@@ -19,7 +20,10 @@ export const getQuestContext = (rates: number): QuestContext => {
     return quest;
   };
 
+  const allQuests = availableQuests.values().map(get).toArray();
+
   return {
     get,
+    allQuests,
   };
 };

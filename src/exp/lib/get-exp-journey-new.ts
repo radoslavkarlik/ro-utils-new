@@ -1,7 +1,6 @@
 import { getRawExpPoint, meetsExpRequirements } from '@/exp/calc';
 import { EXP_QUEST_RATE, MONSTER_RATE } from '@/exp/constants';
 import { compareQueueSteps } from '@/exp/lib/compare-queue-steps';
-import { estimateFinalKillCount } from '@/exp/lib/estimate-final-kill-count';
 import { exploreQueueStep } from '@/exp/lib/explore-queue-step';
 import type { ExpJourney } from '@/exp/types/exp-journey';
 import { type ExpPoint, isRawExpPoint } from '@/exp/types/exp-point';
@@ -19,22 +18,28 @@ type Args = {
   readonly allowedMonsters: ReadonlySet<MonsterId>;
 };
 
+// TODO allow starting with completed quests, so they can be used as a completed prereq
 export function* getExpJourney({
   start,
   target,
   allowedQuests,
   allowedMonsters,
 }: Args): Generator<ExpJourney> {
-  const quests = getQuestContext(EXP_QUEST_RATE);
+  const quests = getQuestContext(allowedQuests, EXP_QUEST_RATE);
   const monsters = getMonsterContext(allowedMonsters, MONSTER_RATE);
 
   const startExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
   const targetExp = isRawExpPoint(target) ? target : getRawExpPoint(target);
 
-  const availableQuests = allowedQuests
-    .values()
-    .filter((questId) => !quests.get(questId)?.prerequisite?.questIds?.length)
-    .toArray();
+  const [availableQuests, lockedQuests] = quests.allQuests.reduce(([available, locked], quest) => {
+    const isAvailable = !quest?.prerequisite?.questIds?.length;
+
+    if (isAvailable) {
+      return [[...available, quest.id], locked]
+    }
+
+    return [available, [...locked, quest.id]]
+  }, [[], []] as [available: Array<QuestId>, locked: Array<QuestId>])
 
   const initialMonsterId = monsters.thresholds[0]?.[0]
 
@@ -52,6 +57,7 @@ export function* getExpJourney({
     kills: 0,
     completedQuests: new Set(),
     availableQuests: new Set(availableQuests),
+    lockedQuests: new Set(lockedQuests),
     journey: [],
     context: {
       targetExp,
@@ -66,7 +72,7 @@ export function* getExpJourney({
   };
 
   const queue = new PriorityQueue<QueueStep>();
-  queue.enqueue(initialStep, estimateFinalKillCount(initialStep, targetExp));
+  queue.enqueue(initialStep, 0);
 
   for (const step of queue) {
     if (meetsExpRequirements(step.exp, targetExp)) {
@@ -74,14 +80,14 @@ export function* getExpJourney({
         bestStep = step;
 
         yield step.journey;
-        // TODO maybe clear even when equal
-        queue.clear((step) => step.kills > bestStep.kills);
+        queue.clear((step) => step.kills >= bestStep.kills);
       }
     } else {
-      const nextSteps = exploreQueueStep(step);
+      const nextSteps = exploreQueueStep(step, bestStep.kills);
 
       for (const nextStep of nextSteps) {
-        queue.enqueue(nextStep, estimateFinalKillCount(nextStep, targetExp));
+        // TODO maybe a better metric like include number of quests
+        queue.enqueue(nextStep, nextStep.kills);
       }
     }
   }

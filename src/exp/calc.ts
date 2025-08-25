@@ -128,7 +128,7 @@ export const capExpRewardBase = (
   expRewardBase: number,
 ): number => {
   const { expToNextLevel: expToNextLevelJob, totalExp: totalExpJob } =
-    baseExpChart[Math.floor(startLevelBase) as keyof typeof jobExpChart];
+    baseExpChart[Math.floor(startLevelBase) as unknown as keyof typeof jobExpChart];
 
   const capExpJob = 2 * expToNextLevelJob - (startRawBase - totalExpJob) - 1;
 
@@ -141,7 +141,7 @@ export const capExpRewardJob = (
   expRewardJob: number,
 ): number => {
   const { expToNextLevel: expToNextLevelJob, totalExp: totalExpJob } =
-    jobExpChart[Math.floor(startLevelJob) as keyof typeof jobExpChart];
+    jobExpChart[Math.floor(startLevelJob) as unknown as keyof typeof jobExpChart];
 
   const capExpJob = 2 * expToNextLevelJob - (startRawJob - totalExpJob) - 1;
 

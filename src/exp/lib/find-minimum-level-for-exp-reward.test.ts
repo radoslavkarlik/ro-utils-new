@@ -1,10 +1,10 @@
 import { MIN_EXP_REWARD } from '@/exp/constants';
 import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
-import { getMonsters } from '@/exp/monsters';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
+import { getMonsterContext } from '@/exp/types/monster-context';
 import { MonsterId } from '@/exp/types/monster-id';
 
-const monsters = getMonsters(1);
+const monsters = getMonsterContext(new Set(Object.values(MonsterId)), 1)
 
 describe('findMinimumLevelForExpReward', () => {
   test('returns correct base level for base exp only', () => {
