@@ -1,5 +1,4 @@
-import { getExpJourney as getExpJourneyOld } from '@/exp/lib/get-exp-journey';
-import { getExpJourney } from '@/exp/lib/get-exp-journey-new';
+import { getExpJourney } from '@/exp/lib/get-exp-journey';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
 
@@ -11,8 +10,7 @@ self.onmessage = (event) => {
   }
 
   const start = performance.now();
-  const get = false ? getExpJourneyOld : getExpJourney;
-  const generator = get({
+  const generator = getExpJourney({
     start: { baseLvl, jobLvl },
     target: { jobLvl: 50, baseLvl: 1 },
     // allowedQuests: Object.values(QuestId).filter(

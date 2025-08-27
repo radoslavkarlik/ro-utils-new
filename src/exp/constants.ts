@@ -1,5 +1,5 @@
-export const EXP_QUEST_RATE = 1;
-export const MONSTER_RATE = 1;
+export const EXP_QUEST_RATE = 1.5;
+export const MONSTER_RATE = 1.5;
 
 export const OVERLEVEL_PROTECTION = true;
 
