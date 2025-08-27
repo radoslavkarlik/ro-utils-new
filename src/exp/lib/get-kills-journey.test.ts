@@ -24,7 +24,7 @@ describe('getKillsJourney', () => {
             lockedQuests: new Set(),
             context: {
                 monsters: monsterContext,
-                quests: getQuestContext(new Set(), 1),
+                quests: getQuestContext(new Set(), new Set([QuestId.AcolyteTraining]), 1,),
                 targetExp,
             },
             exp: startExp,

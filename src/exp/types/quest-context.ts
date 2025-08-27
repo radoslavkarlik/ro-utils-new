@@ -7,7 +7,7 @@ export type QuestContext = {
   readonly allQuests: ReadonlyArray<Quest>;
 };
 
-export const  getQuestContext = (availableQuests: ReadonlySet<QuestId>, rates: number): QuestContext => {
+export const  getQuestContext = (availableQuests: ReadonlySet<QuestId>, completedQuests: ReadonlySet<QuestId>, rates: number): QuestContext => {
   const quests = getQuests(rates);
 
   const get = (id: QuestId): Quest => {
@@ -20,7 +20,7 @@ export const  getQuestContext = (availableQuests: ReadonlySet<QuestId>, rates: n
     return quest;
   };
 
-  const allQuests = availableQuests.values().map(get).toArray();
+  const allQuests = availableQuests.values().filter(questId => !completedQuests.has(questId)).map(get).toArray();
 
   return {
     get,

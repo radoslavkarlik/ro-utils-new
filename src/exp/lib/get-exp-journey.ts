@@ -16,23 +16,24 @@ type Args = {
   readonly target: ExpPoint;
   readonly allowedQuests: ReadonlySet<QuestId>;
   readonly allowedMonsters: ReadonlySet<MonsterId>;
+  readonly completedQuests: ReadonlySet<QuestId>;
 };
 
-// TODO allow starting with completed quests, so they can be used as a completed prereq
 export function* getExpJourney({
   start,
   target,
   allowedQuests,
   allowedMonsters,
+  completedQuests,
 }: Args): Generator<ExpJourney> {
-  const quests = getQuestContext(allowedQuests, EXP_QUEST_RATE);
+  const quests = getQuestContext(allowedQuests, completedQuests, EXP_QUEST_RATE);
   const monsters = getMonsterContext(allowedMonsters, MONSTER_RATE);
 
   const startExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
   const targetExp = isRawExpPoint(target) ? target : getRawExpPoint(target);
 
   const [availableQuests, lockedQuests] = quests.allQuests.reduce(([available, locked], quest) => {
-    const isAvailable = !quest?.prerequisite?.questIds?.length;
+    const isAvailable = !quest?.prerequisite?.questIds?.some(questId => !completedQuests.has(questId));
 
     if (isAvailable) {
       return [[...available, quest.id], locked]
@@ -55,7 +56,7 @@ export function* getExpJourney({
       thresholdIndex: 0,
     },
     kills: 0,
-    completedQuests: new Set(),
+    completedQuests,
     availableQuests: new Set(availableQuests),
     lockedQuests: new Set(lockedQuests),
     journey: [],

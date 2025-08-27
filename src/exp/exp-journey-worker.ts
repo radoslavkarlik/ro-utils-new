@@ -3,7 +3,7 @@ import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
 
 self.onmessage = (event) => {
-  const { baseLvl, jobLvl } = event.data;
+  const { baseLvl, jobLvl, completedQuests } = event.data;
 
   if (typeof baseLvl !== 'number' || typeof jobLvl !== 'number') {
     return;
@@ -27,6 +27,7 @@ self.onmessage = (event) => {
       MonsterId.Muka,
       MonsterId.Wolf,
     ]),
+    completedQuests: new Set(completedQuests),
   });
 
   for (const value of generator) {

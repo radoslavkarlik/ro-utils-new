@@ -5,7 +5,7 @@ import { type Quest, isExpQuest } from '@/exp/types/quest';
 import { QuestId } from '@/exp/types/quest-id';
 import { isArray } from '@/lib/is-array';
 
-const quests: Record<QuestId, Quest> = {
+export const quests: Record<QuestId, Quest> = {
   [QuestId.AcolyteTrainingZombie]: {
     type: 'monster',
     id: QuestId.AcolyteTrainingZombie,
