@@ -5,7 +5,6 @@ import { QuestId } from '@/exp/types/quest-id';
 
 type MonsterPrerequisite = {
   readonly baseLevel?: number;
-  // TODO monster quest prerequisite is ignored
   readonly questId?: QuestId;
 };
 

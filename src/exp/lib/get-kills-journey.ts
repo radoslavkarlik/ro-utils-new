@@ -6,6 +6,7 @@ import type {
 } from '@/exp/types/exp-journey';
 import type { RawExpPoint } from '@/exp/types/exp-point';
 import type { MonsterContext } from '@/exp/types/monster-context';
+import { QuestId } from '@/exp/types/quest-id';
 import type { CurrentMonster, QueueStep } from '@/exp/types/queue-step';
 
 type Args = {
@@ -25,6 +26,7 @@ export const getKillsJourney = ({
     previousQueueStep.monster,
     [],
     previousQueueStep.context.monsters,
+    previousQueueStep.completedQuests,
   );
 
   const totalKills = steps.reduce(
@@ -41,6 +43,7 @@ const getSteps = (
   currentMonster: CurrentMonster,
   accumulatedSteps: ReadonlyArray<ExpJourneyMonsterStep>,
   monsters: MonsterContext,
+  completedQuests: ReadonlySet<QuestId>,
 ): [ReadonlyArray<ExpJourneyMonsterStep>, CurrentMonster] => {
   const addStep = (
     startExp: RawExpPoint,
@@ -68,7 +71,16 @@ const getSteps = (
     ];
   }
 
-  const [nextMonsterId, nextMonsterBaseLevel] = nextMonsterThreshold;
+  const [nextMonsterId, { baseLevel: nextMonsterBaseLevel, quests: nextMonsterQuests }] = nextMonsterThreshold;
+  const isQuestPrereqMet = !nextMonsterQuests.difference(completedQuests).size;
+
+  if (!isQuestPrereqMet) {
+    return [
+      addStep(startExp, targetExp, currentMonster.monster),
+      currentMonster,
+    ];
+  }
+
   const nextMonster = monsters.get(nextMonsterId);
   const nextCurrentMonster: CurrentMonster = {
     isLast: nextThresholdIndex >= monsters.thresholds.length - 1,
@@ -85,6 +97,7 @@ const getSteps = (
       nextCurrentMonster,
       accumulatedSteps,
       monsters,
+      completedQuests,
     );
   }
 
@@ -111,6 +124,7 @@ const getSteps = (
     nextCurrentMonster,
     steps,
     monsters,
+    completedQuests,
   );
 };
 
