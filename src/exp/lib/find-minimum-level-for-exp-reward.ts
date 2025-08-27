@@ -2,7 +2,7 @@ import baseExpChart from '@/data/base-exp-chart.json' with { type: 'json' };
 import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
   type: 'json',
 };
-import { getLevelExpPoint, getRawExpPoint, willOverlevel } from '@/exp/calc';
+import { getLevelExpPoint, getRawExpPoint, maxBaseLevel, maxJobLevel, willOverlevel } from '@/exp/calc';
 import { MIN_EXP_REWARD, OVERLEVEL_PROTECTION } from '@/exp/constants';
 import type { Monster } from '@/exp/monsters';
 import type { LevelExpPoint, RawExpPoint } from '@/exp/types/exp-point';
@@ -54,7 +54,6 @@ export const findMinimumLevelForExpReward = (
 
     expLoop: for (
       let baseExp = startExp.baseExp;
-      // TODO is equal correct here?
       baseExp <= endExp.baseExp;
       baseExp += monster.reward.base
     ) {
@@ -192,8 +191,7 @@ const _findMinimumLevelForExpReward = (
       return [+bLvl, false];
     }
 
-    // TODO dont use infinity, use max level? or 1?
-    return [Number.POSITIVE_INFINITY, false];
+    return [maxBaseLevel, false];
   })();
 
   const [overlevelMinJob, reachedMaxJob] = ((): [number, boolean] => {
@@ -222,7 +220,7 @@ const _findMinimumLevelForExpReward = (
       return [+jLvl, false];
     }
 
-    return [Number.POSITIVE_INFINITY, false];
+    return [maxJobLevel, false];
   })();
 
   return [

@@ -87,7 +87,6 @@ export function* getExpJourney({
       const nextSteps = exploreQueueStep(step, bestStep.kills);
 
       for (const nextStep of nextSteps) {
-        // TODO maybe a better metric like include number of quests
         queue.enqueue(nextStep, nextStep.kills);
       }
     }

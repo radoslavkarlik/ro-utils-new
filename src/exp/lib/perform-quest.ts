@@ -24,9 +24,6 @@ export const performQuest =
   (questId: QuestId): QueueStep | null => {
     const quest = previousStep.context.quests.get(questId);
 
-    // TODO prereq for exp and monster quest
-    // TODO cap reward if resulted in overlevel.. e.g. just reached max level but there was overflow
-
     const minReqExp = ((): RawExpPoint => {
       if (isExpQuest(quest)) {
         const [minimumOverlevel] = findMinimumLevelForExpReward(
@@ -88,6 +85,7 @@ export const performQuest =
     const newLockedQuests = new Set(previousStep.lockedQuests.values().filter(questId => !unlockedQuests.has(questId)))
 
     if (isExpQuest(quest)) {
+      // TODO cap reward if resulted in overlevel.. e.g. just reached max level but there was overflow
       const rewardsArray = getRewardsArray(quest.reward);
       const totalQuestReward = getTotalExpReward(rewardsArray);
       const finishedExp = addReward(newExp, totalQuestReward);

@@ -44,5 +44,5 @@ fix formatter and linter
 
 ignores monster switch quest prereq
 ignores quest prereqs???
-add time metric, like how long it takes to kill mobs and rather use that instead of total kills
+add time metric, like how long it takes to kill mobs and finish a quest and rather use that instead of total kills, or maybe include number of finished quests too
 ..either this or disallow intermediate quests on their own.. e.g. siroma killing only without rachel sanc.

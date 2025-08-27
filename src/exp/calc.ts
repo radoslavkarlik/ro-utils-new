@@ -12,8 +12,8 @@ import type { ExpReward } from '@/exp/types/exp-reward';
 import { OVERLEVEL_PROTECTION } from './constants';
 import type { Monster } from './monsters';
 
-const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
-const maxJobLevel = Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
+export const maxBaseLevel = Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
+export const maxJobLevel = Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
 
 const emptyExpEntry = [1, { totalExp: 0, expToNextLevel: 0 }] as const;
 
@@ -183,7 +183,6 @@ export const willOverlevel = (
     expReward,
   );
 
-  // TODO log exp was wasted but hit max job level
   return {
     base: expReward.base > capRewardBase,
     job: expReward.job > capRewardJob,
