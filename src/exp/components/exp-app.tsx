@@ -1,3 +1,4 @@
+import { ExpJourneyWorkerArgs } from "@/exp/exp-journey-worker";
 import WorkerURL from "@/exp/exp-journey-worker.ts?worker";
 import { quests } from "@/exp/quests";
 import {
@@ -20,11 +21,9 @@ export function ExpApp() {
   const [steps, isFinished, totalSeconds] = value;
 
   useEffect(() => {
-    const cleanUp = startGenerator(baseLvl, jobLvl, completedQuests);
+    const cleanUp = startGenerator({ baseLvl, jobLvl, completedQuests });
 
-    return () => {
-      cleanUp();
-    };
+    return () => cleanUp();
   }, [baseLvl, jobLvl, completedQuests, startGenerator]);
 
   return (
@@ -128,37 +127,28 @@ const useGeneratorWorker = () => {
     false,
     0,
   ]);
-  const [worker, setWorker] = useState<Worker | null>(null);
+  const [worker, setWorker] = useState(new WorkerURL());
 
   useEffect(() => {
-    const newWorker = new WorkerURL();
-
-    setWorker(newWorker);
-
-    newWorker.onmessage = (event) => {
+    worker.onmessage = (event) => {
       if (typeof event.data.value === "number") {
         setValue(([steps]) => [steps, true, event.data.value]);
-        newWorker.terminate();
       } else {
         setValue([event.data.value, false, 0]);
       }
     };
 
-    return () => newWorker.terminate(); // Cleanup worker on unmount
+    return () => worker.terminate(); // Cleanup worker on unmount
+  }, [worker]);
+
+  const startGenerator = useCallback((args: ExpJourneyWorkerArgs) => {
+    const worker = new WorkerURL();
+    setWorker(worker);
+
+    worker.postMessage(args); // Pass arguments to worker
+
+    return () => worker.terminate();
   }, []);
-
-  const startGenerator = useCallback(
-    (
-      baseLvl: number,
-      jobLvl: number,
-      completedQuests: ReadonlyArray<QuestId>
-    ) => {
-      worker?.postMessage({ baseLvl, jobLvl, completedQuests }); // Pass arguments to worker
-
-      return () => worker?.terminate();
-    },
-    [worker]
-  );
 
   return { value, startGenerator };
 };

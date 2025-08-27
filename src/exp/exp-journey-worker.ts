@@ -2,12 +2,14 @@ import { getExpJourney } from '@/exp/lib/get-exp-journey';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
 
-self.onmessage = (event) => {
-  const { baseLvl, jobLvl, completedQuests } = event.data;
+export type ExpJourneyWorkerArgs = {
+  readonly baseLvl: number;
+  readonly jobLvl: number;
+  readonly completedQuests: ReadonlyArray<QuestId>;
+}
 
-  if (typeof baseLvl !== 'number' || typeof jobLvl !== 'number') {
-    return;
-  }
+self.onmessage = (event) => {
+  const { baseLvl, jobLvl, completedQuests } = event.data as ExpJourneyWorkerArgs;
 
   const start = performance.now();
   const generator = getExpJourney({

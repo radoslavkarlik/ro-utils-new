@@ -46,4 +46,3 @@ ignores monster switch quest prereq
 ignores quest prereqs???
 add time metric, like how long it takes to kill mobs and rather use that instead of total kills
 ..either this or disallow intermediate quests on their own.. e.g. siroma killing only without rachel sanc.
-changing input does not fire worker again
