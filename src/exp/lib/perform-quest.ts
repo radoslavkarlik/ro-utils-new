@@ -24,12 +24,13 @@ export const performQuest =
   (questId: QuestId): QueueStep | null => {
     const quest = previousStep.context.quests.get(questId);
 
-    const minReqExp = ((): RawExpPoint => {
+    const [minReqExp, overleveledBase, overleveledJob] = ((): [RawExpPoint, boolean, boolean] => {
       if (isExpQuest(quest)) {
-        const [minimumOverlevel] = findMinimumLevelForExpReward(
+        const [minimumOverlevel, { reachedMaxBase, reachedMaxJob }] = findMinimumLevelForExpReward(
           quest.reward,
-          // TODO optimize finding this or calculation
-          () => previousStep.monster.monster,
+          previousStep.context.monsters,
+          previousStep.completedQuests,
+          previousStep.exp,
         );
 
         const minQuestLvl = getMaxLevelExpPoint(minimumOverlevel, {
@@ -37,15 +38,15 @@ export const performQuest =
           jobLvl: quest.prerequisite?.jobLevel ?? 1,
         });
 
-        return getRawExpPoint(minQuestLvl);
+        return [getRawExpPoint(minQuestLvl), reachedMaxBase, reachedMaxJob];
       }
 
       const monster = previousStep.context.monsters.get(quest.kills.monsterId);
 
-      return getRawExpPoint({
+      return [getRawExpPoint({
         baseLvl: monster.prerequisite?.baseLevel ?? 1,
         jobLvl: 1,
-      });
+      }), false, false];
     })();
 
     let extraKills = 0;
@@ -86,6 +87,7 @@ export const performQuest =
 
     if (isExpQuest(quest)) {
       // TODO cap reward if resulted in overlevel.. e.g. just reached max level but there was overflow
+      // Like maybe its ok to overflow when it results in the max level so it should be show also that it overflowed in UI
       const rewardsArray = getRewardsArray(quest.reward);
       const totalQuestReward = getTotalExpReward(rewardsArray);
       const finishedExp = addReward(newExp, totalQuestReward);

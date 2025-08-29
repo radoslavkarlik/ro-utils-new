@@ -3,13 +3,13 @@ import type { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
 import { numericallyAsc, sortByProp } from '@/lib/sort-by';
 
-type MonsterThreshold = {
+export type MonsterThreshold = readonly [MonsterId, {
   readonly baseLevel: number;
   readonly quests: ReadonlySet<QuestId>;
-}
+}];
 
 export type MonsterContext = {
-  readonly thresholds: ReadonlyArray<[MonsterId, MonsterThreshold]>;
+  readonly thresholds: ReadonlyArray<MonsterThreshold>;
   readonly get: (id: MonsterId) => Monster;
 };
 
@@ -32,7 +32,7 @@ export const getMonsterContext = (
   const thresholds = allowedMonsters
     .values()
     .map(get)
-    .map<[MonsterId, MonsterThreshold]>((monster) => [
+    .map<MonsterThreshold>((monster) => [
       monster.id,
       { 
         baseLevel: monster.prerequisite?.baseLevel ?? 1,

@@ -4,15 +4,17 @@ import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
 };
 import { getLevelExpPoint, getRawExpPoint, maxBaseLevel, maxJobLevel, willOverlevel } from '@/exp/calc';
 import { MIN_EXP_REWARD, OVERLEVEL_PROTECTION } from '@/exp/constants';
-import type { Monster } from '@/exp/monsters';
 import type { LevelExpPoint, RawExpPoint } from '@/exp/types/exp-point';
 import type { ExpReward } from '@/exp/types/exp-reward';
+import { MonsterContext, MonsterThreshold } from '@/exp/types/monster-context';
 import { getRewardsArray } from '@/exp/types/quest';
+import { QuestId } from '@/exp/types/quest-id';
 
+// TODO use kill numbers from minimum level search so it does not need to calculate kills after?
 export const findMinimumLevelForExpReward = (
   reward: ExpReward | ReadonlyArray<ExpReward>,
-  // TODO return multiple monsters, work with thresholds
-  getMonster?: (maxBaseLevel: number) => Monster,
+  monsterContext: MonsterContext,
+  completedQuests: ReadonlySet<QuestId>,
   startingExp?: RawExpPoint,
 ): [
   LevelExpPoint,
@@ -21,13 +23,28 @@ export const findMinimumLevelForExpReward = (
   const rewards = getRewardsArray(reward);
   const allRewardsResult = _findMinimumLevelForExpReward(rewards);
 
-  if (!getMonster || rewards.length === 1) {
+  const relevantThresholds = monsterContext.thresholds.reduce((acc, threshold, _index, arr) => {
+    const [, prereq] = threshold;
+    if (prereq.quests.difference(completedQuests).size) {
+      // TODO hack
+      (arr as Array<MonsterThreshold>).splice(1);
+    } else {
+      acc.push(threshold)
+    }
+
+    return acc;
+  }, [] as Array<MonsterThreshold>);
+
+  const monsterThreshold = relevantThresholds.at(0)
+  const _monster = monsterThreshold ? monsterContext.get(monsterThreshold[0]) : undefined
+
+  if (!_monster || rewards.length === 1) {
     return allRewardsResult;
   }
 
+  const monster = _monster;
   const [allRewardsExp] = allRewardsResult;
 
-  const monster = getMonster(allRewardsExp.baseLvl);
   const endExp = getRawExpPoint(allRewardsExp);
 
   const [baseLvl, reachedMaxBase] = ((): [number, boolean] => {
@@ -52,6 +69,10 @@ export const findMinimumLevelForExpReward = (
       return [getLevelExpPoint(startExp).baseLvl, true];
     }
 
+    // TODO use increments like these only with provided starting exp
+    // if not provided then return the very highest minimum exp.. prob should use binary search or similar
+    // and return separately, otherwise exp are gained together from a monster
+    // always pool. but if provided exp the difference can be only multiply of thresholds added to starting exp??
     expLoop: for (
       let baseExp = startExp.baseExp;
       baseExp <= endExp.baseExp;
