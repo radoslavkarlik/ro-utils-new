@@ -28,8 +28,9 @@ export const performQuest =
       if (isExpQuest(quest)) {
         const [minimumOverlevel] = findMinimumLevelForExpReward(
           quest.reward,
-          // TODO optimize finding this or calculation
-          () => previousStep.monster.monster,
+          previousStep.context.monsters,
+          previousStep.completedQuests,
+          previousStep.exp,
         );
 
         const minQuestLvl = getMaxLevelExpPoint(minimumOverlevel, {
