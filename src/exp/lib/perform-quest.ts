@@ -1,140 +1,98 @@
-import {
-  applyRates,
-  getLevelExpPoint,
-  getMaxLevelExpPoint,
-  getRawExpPoint,
-  meetsExpRequirements,
-} from '@/exp/calc';
+import { applyRates, meetsExpRequirements } from '@/exp/calc';
 import { addReward } from '@/exp/lib/add-reward';
-import { findMinimumLevelForExpReward } from '@/exp/lib/find-minimum-level-for-exp-reward';
+import { getExpBeforeExpReward } from '@/exp/lib/get-exp-before-exp-reward';
 import { getKillsJourney } from '@/exp/lib/get-kills-journey';
-import { mergeJourneys } from '@/exp/lib/merge-journeys';
-import type { ExpJourney } from '@/exp/types/exp-journey';
-import type { RawExpPoint } from '@/exp/types/exp-point';
-import {
-  getRewardsArray,
-  getTotalExpReward,
-  isExpQuest,
-} from '@/exp/types/quest';
+import { Exp, type Journey } from '@/exp/types/journey';
+import { getRewardsArray, isExpQuest } from '@/exp/types/quest';
 import type { QuestId } from '@/exp/types/quest-id';
-import type { CurrentMonster, QueueStep } from '@/exp/types/queue-step';
 
-export const performQuest =
-  (previousStep: QueueStep, bestStepKills: number) =>
-  (questId: QuestId): QueueStep | null => {
-    const quest = previousStep.context.quests.get(questId);
+export const performQuest = (
+  journey: Journey,
+  getBestJourneyKills: () => number,
+  questId: QuestId,
+): Journey | null => {
+  const bestJourneyKills = getBestJourneyKills();
+  const newJourney = journey.split();
 
-    const [minReqExp, overleveledBase, overleveledJob] = ((): [RawExpPoint, boolean, boolean] => {
-      if (isExpQuest(quest)) {
-        const [minimumOverlevel, { reachedMaxBase, reachedMaxJob }] = findMinimumLevelForExpReward(
-          quest.reward,
-          previousStep.context.monsters,
-          previousStep.completedQuests,
-          previousStep.exp,
-        );
+  const quest = newJourney.context.quests.get(questId);
 
-        const minQuestLvl = getMaxLevelExpPoint(minimumOverlevel, {
-          baseLvl: quest.prerequisite?.baseLevel ?? 1,
-          jobLvl: quest.prerequisite?.jobLevel ?? 1,
-        });
-
-        return [getRawExpPoint(minQuestLvl), reachedMaxBase, reachedMaxJob];
-      }
-
-      const monster = previousStep.context.monsters.get(quest.kills.monsterId);
-
-      return [getRawExpPoint({
-        baseLvl: monster.prerequisite?.baseLevel ?? 1,
-        jobLvl: 1,
-      }), false, false];
-    })();
-
-    let extraKills = 0;
-    let extraJourney: ExpJourney | null = null;
-    let currentMonster: CurrentMonster | null = null;
-
-    if (!meetsExpRequirements(previousStep.exp, minReqExp)) {
-      [extraJourney, extraKills, currentMonster] = getKillsJourney({
-        startExp: previousStep.exp,
-        targetExp: minReqExp,
-        previousQueueStep: previousStep,
-      });
-
-      if ((previousStep.kills + extraKills) >= bestStepKills) {
-        return null;
-      }
-    }
-
-    const journeyBeforeQuest = extraJourney
-      ? mergeJourneys(previousStep.journey, extraJourney)
-      : previousStep.journey;
-
-    const newLevel = extraJourney?.[extraJourney.length - 1]?.expPoint;
-    const newExp = newLevel ? getRawExpPoint(newLevel) : previousStep.exp;
-
-    const newCompletedQuests = new Set(previousStep.completedQuests).add(questId);
-
-    const unlockedQuests = new Set(previousStep.lockedQuests.values().map(previousStep.context.quests.get).filter(quest => !quest.prerequisite?.questIds || quest.prerequisite.questIds.every(questId => newCompletedQuests.has(questId))).map(quest => quest.id));
-
-    const newAvailableQuests = new Set([
-      ...previousStep.availableQuests
-        .values()
-        .filter((available) => available !== questId),
-      ...unlockedQuests,
-    ])
-
-    const newLockedQuests = new Set(previousStep.lockedQuests.values().filter(questId => !unlockedQuests.has(questId)))
-
+  const minReqExp = ((): Exp => {
     if (isExpQuest(quest)) {
-      // TODO cap reward if resulted in overlevel.. e.g. just reached max level but there was overflow
-      // Like maybe its ok to overflow when it results in the max level so it should be show also that it overflowed in UI
-      const rewardsArray = getRewardsArray(quest.reward);
-      const totalQuestReward = getTotalExpReward(rewardsArray);
-      const finishedExp = addReward(newExp, totalQuestReward);
-
-      const step: QueueStep = {
-        ...previousStep,
-        availableQuests: newAvailableQuests,
-        completedQuests: newCompletedQuests,
-        lockedQuests: newLockedQuests,
-        exp: finishedExp,
-        kills: previousStep.kills + extraKills,
-        monster: currentMonster ?? previousStep.monster,
-        journey: [
-          ...journeyBeforeQuest,
-          {
-            type: 'quest',
-            expPoint: getLevelExpPoint(finishedExp),
-            questId,
-          },
-        ],
-      };
-      
-      return step;
+      return new Exp({
+        baseLvl: quest.prerequisite?.baseLevel ?? 1,
+        jobLvl: quest.prerequisite?.jobLevel ?? 1,
+      });
     }
 
-    const monster = previousStep.context.monsters.get(quest.kills.monsterId);
+    const monster = newJourney.context.monsters.get(quest.kills.monsterId);
 
-    const reward = applyRates(monster.reward, quest.kills.count);
-    const finishedExp = addReward(newExp, reward);
+    return new Exp({
+      baseLvl: monster.prerequisite?.baseLevel ?? 1,
+      jobLvl: 1,
+    });
+  })();
 
-      const step: QueueStep = {
-      ...previousStep,
-      availableQuests: newAvailableQuests,
-      completedQuests: newCompletedQuests,
-      lockedQuests: newLockedQuests,
-      exp: finishedExp,
-      kills: previousStep.kills + extraKills + quest.kills.count,
-      monster: currentMonster ?? previousStep.monster,
-      journey: [
-        ...journeyBeforeQuest,
+  if (!meetsExpRequirements(newJourney.exp, minReqExp)) {
+    const killsJourney = getKillsJourney({
+      startExp: newJourney.exp,
+      targetExp: minReqExp,
+      currentMonster: newJourney.monster,
+      completedQuests: newJourney.quests.completedQuests,
+    });
+
+    newJourney.addKills(killsJourney);
+
+    if (newJourney.totalKills >= bestJourneyKills) {
+      return null;
+    }
+  }
+
+  if (!isExpQuest(quest)) {
+    const monster = newJourney.context.monsters.get(quest.kills.monsterId);
+    const extraKills = quest.kills.count;
+    const reward = applyRates(monster.reward, extraKills);
+    const finishedExp = addReward(newJourney.exp, reward);
+
+    newJourney.addKills({
+      totalKills: extraKills,
+      steps: [
         {
-          type: 'quest',
-          expPoint: getLevelExpPoint(finishedExp),
+          type: 'quest-monster',
+          kills: extraKills,
+          monsterId: quest.kills.monsterId,
+          monsterName: monster.name,
+          exp: finishedExp,
           questId,
         },
       ],
+    });
+
+    if (newJourney.totalKills >= bestJourneyKills) {
+      return null;
+    }
+  } else {
+    const expRewardSuccess = getExpBeforeExpReward(
+      newJourney,
+      getRewardsArray(quest.reward),
+    );
+
+    if (!expRewardSuccess) {
+      return null;
     }
 
-    return step;
-  };
+    newJourney.addExp({
+      type: 'quest',
+      exp: expRewardSuccess.finishedExp,
+      questId,
+    });
+
+    if (newJourney.totalKills >= bestJourneyKills) {
+      return null;
+    }
+  }
+
+  newJourney.completeQuest(questId);
+  newJourney.monster.catchUp(newJourney.exp, newJourney.quests.completedQuests);
+
+  return newJourney;
+};

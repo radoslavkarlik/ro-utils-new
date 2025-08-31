@@ -1,17 +1,16 @@
-import { capExpReward, getRawExpPoint } from '@/exp/calc';
+import { capExpReward, getBaseLevel, getJobLevel } from '@/exp/calc';
 import { MIN_EXP_REWARD } from '@/exp/constants';
-import type { LevelExpPoint } from '@/exp/types/exp-point';
-import { ExpReward } from './types/exp-reward';
+import type { ExpReward } from './types/exp-reward';
+import { Exp } from '@/exp/types/journey';
 
 describe('capExpReward', () => {
   test('returns cap exp when overlevel', () => {
-    const level: LevelExpPoint = {
+    const level = new Exp({
       baseLvl: 1,
       jobLvl: 47,
-    };
-    const rawExp = getRawExpPoint(level);
+    });
 
-    const result = capExpReward(rawExp, level, {
+    const result = capExpReward(level, {
       base: MIN_EXP_REWARD,
       job: 900_000,
     });
@@ -23,13 +22,12 @@ describe('capExpReward', () => {
   });
 
   test('returns full exp when not overlevel', () => {
-    const level: LevelExpPoint = {
+    const level = new Exp({
       baseLvl: 1,
       jobLvl: 48,
-    };
-    const rawExp = getRawExpPoint(level);
+    });
 
-    const result = capExpReward(rawExp, level, {
+    const result = capExpReward(level, {
       base: MIN_EXP_REWARD,
       job: 900_000,
     });
@@ -38,5 +36,17 @@ describe('capExpReward', () => {
       base: MIN_EXP_REWARD,
       job: 900_000,
     } satisfies ExpReward);
+  });
+});
+
+describe('getJobLevel', () => {
+  test('prevents overlevel', () => {
+    expect(getJobLevel(4000000)).toBe(50);
+  });
+});
+
+describe('getBaseLevel', () => {
+  test('prevents overlevel', () => {
+    expect(getBaseLevel(450000000)).toBe(99);
   });
 });

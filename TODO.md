@@ -22,27 +22,25 @@ save reason why certain step was made - eg prevent overleveling, reach next targ
 logic tests
 refactor
 code quality
-better global flags handling - rates etc
-choose correctly dataset baseexp, jobexp
 choose monsters from db
 quests from db?
 functions for base and job separately cause often it uses explicitely one param as 0 and uses only result for one param
 
 exp point - class associated get raw, get level
 
-toggle to allow some wasted exp fixed or % or max level
-
-optimize will overlevel - can probably be replaced with cap exp reward and compare
-
-goal 50 job
-
-
-
 fix formatter and linter
+Allow user to choose exp tables and rates
+Different goals agnostic? Its kind of job 50 now only
 
-.....
+Better metric - time to kill mob, do quest, number of quests
+-Mark quests as intermediate, e.g. Siroma makes no sense without rachel sanc. But maybe it will be autosolved by above
+Better UI
+Toggle to allow some wasted exp fixed or % or max level
+terminate early if also reached target level
+prevent reaching higher than max level - from exp quest and monster kills
+work with OVERLEVEL_PROTECTION
 
-ignores monster switch quest prereq
-ignores quest prereqs???
-add time metric, like how long it takes to kill mobs and finish a quest and rather use that instead of total kills, or maybe include number of finished quests too
-..either this or disallow intermediate quests on their own.. e.g. siroma killing only without rachel sanc.
+
+sort by estimated total kills but remove only by actual total kills
+without metaling skips rachel sanc 2 - probably overleveling too much?
+binary search tree for overlevel protection

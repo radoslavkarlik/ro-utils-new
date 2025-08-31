@@ -1,19 +1,20 @@
-import { getRawExpPoint, meetsExpRequirements } from '@/exp/calc';
 import { EXP_QUEST_RATE, MONSTER_RATE } from '@/exp/constants';
-import { compareQueueSteps } from '@/exp/lib/compare-queue-steps';
-import { exploreQueueStep } from '@/exp/lib/explore-queue-step';
-import type { ExpJourney } from '@/exp/types/exp-journey';
-import { type ExpPoint, isRawExpPoint } from '@/exp/types/exp-point';
+import { compareJourneys } from '@/exp/lib/compare-journeys';
+import { exploreQueueJourneys } from '@/exp/lib/explore-queue-journeys';
 import { getMonsterContext } from '@/exp/types/monster-context';
 import type { MonsterId } from '@/exp/types/monster-id';
 import type { QuestId } from '@/exp/types/quest-id';
-import type { QueueStep } from '@/exp/types/queue-step';
 import { PriorityQueue } from '@/lib/priority-queue';
 import { getQuestContext } from '../types/quest-context';
+import { type Exp, Journey } from '@/exp/types/journey';
+import type { JourneyContext } from '@/exp/types/journey-context';
+import type { QuestJourney } from '@/exp/types/quest-journey';
+import type { ExpJourney } from '@/exp/types/exp-journey';
+import { CurrentMonster } from '@/exp/types/current-monster';
 
 type Args = {
-  readonly start: ExpPoint;
-  readonly target: ExpPoint;
+  readonly start: Exp;
+  readonly target: Exp;
   readonly allowedQuests: ReadonlySet<QuestId>;
   readonly allowedMonsters: ReadonlySet<MonsterId>;
   readonly completedQuests: ReadonlySet<QuestId>;
@@ -26,69 +27,73 @@ export function* getExpJourney({
   allowedMonsters,
   completedQuests,
 }: Args): Generator<ExpJourney> {
-  const quests = getQuestContext(allowedQuests, completedQuests, EXP_QUEST_RATE);
+  const quests = getQuestContext(
+    allowedQuests,
+    completedQuests,
+    EXP_QUEST_RATE,
+  );
   const monsters = getMonsterContext(allowedMonsters, MONSTER_RATE);
 
-  const startExp = isRawExpPoint(start) ? start : getRawExpPoint(start);
-  const targetExp = isRawExpPoint(target) ? target : getRawExpPoint(target);
+  const [availableQuests, lockedQuests] = quests.allQuests.reduce(
+    ([available, locked], quest) => {
+      const isAvailable = !quest?.prerequisite?.questIds?.some(
+        (questId) => !completedQuests.has(questId),
+      );
 
-  const [availableQuests, lockedQuests] = quests.allQuests.reduce(([available, locked], quest) => {
-    const isAvailable = !quest?.prerequisite?.questIds?.some(questId => !completedQuests.has(questId));
+      if (isAvailable) {
+        return [[...available, quest.id], locked];
+      }
 
-    if (isAvailable) {
-      return [[...available, quest.id], locked]
-    }
-
-    return [available, [...locked, quest.id]]
-  }, [[], []] as [available: Array<QuestId>, locked: Array<QuestId>])
-
-  const initialMonsterId = monsters.thresholds[0]?.[0]
-
-  if (!initialMonsterId) {
-    throw new Error('Initial monster id not found: ' + initialMonsterId);
-  }
-
-  const initialStep: QueueStep = {
-    exp: startExp,
-    monster: {
-      monster: monsters.get(initialMonsterId),
-      isLast: monsters.thresholds.length === 1,
-      thresholdIndex: 0,
+      return [available, [...locked, quest.id]];
     },
-    kills: 0,
+    [[], []] as [available: Array<QuestId>, locked: Array<QuestId>],
+  );
+
+  const currentMonster = CurrentMonster.create(monsters.allMonsters);
+
+  const questJourney: QuestJourney = {
     completedQuests,
     availableQuests: new Set(availableQuests),
     lockedQuests: new Set(lockedQuests),
-    journey: [],
-    context: {
-      targetExp,
-      quests,
-      monsters,
-    },
   };
 
-  let bestStep: QueueStep = {
-    ...initialStep,
-    kills: Number.POSITIVE_INFINITY,
+  const context: JourneyContext = {
+    targetExp: target,
+    quests,
+    monsters,
   };
 
-  const queue = new PriorityQueue<QueueStep>();
-  queue.enqueue(initialStep, 0);
+  let bestJourney: Journey | null = null;
 
-  for (const step of queue) {
-    if (meetsExpRequirements(step.exp, targetExp)) {
-      if (compareQueueSteps(step, bestStep) < 0) {
-        bestStep = step;
+  const queue = new PriorityQueue<Journey>();
 
-        yield step.journey;
-        queue.clear((step) => step.kills >= bestStep.kills);
+  queue.enqueue(
+    new Journey(start, currentMonster, context, questJourney),
+    Number.POSITIVE_INFINITY,
+  );
+
+  for (const journey of queue) {
+    const nextJourneys = exploreQueueJourneys(
+      journey,
+      () => bestJourney?.totalKills ?? Number.POSITIVE_INFINITY,
+    );
+
+    for (const nextJourney of nextJourneys) {
+      if (!nextJourney.isFinished) {
+        queue.enqueue(nextJourney, nextJourney.totalKills);
+        continue;
       }
-    } else {
-      const nextSteps = exploreQueueStep(step, bestStep.kills);
 
-      for (const nextStep of nextSteps) {
-        queue.enqueue(nextStep, nextStep.kills);
+      if (bestJourney && compareJourneys(nextJourney, bestJourney) >= 0) {
+        continue;
       }
+
+      bestJourney = nextJourney;
+      yield nextJourney.steps;
+
+      queue.clear(
+        (queueJourney) => queueJourney.totalKills >= nextJourney.totalKills,
+      );
     }
   }
 }

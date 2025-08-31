@@ -1,11 +1,11 @@
-import { ExpJourneyWorkerArgs } from "@/exp/exp-journey-worker";
+import type { ExpJourneyWorkerArgs } from "@/exp/exp-journey-worker";
 import WorkerURL from "@/exp/exp-journey-worker.ts?worker";
 import { quests } from "@/exp/quests";
 import {
   type ExpJourney,
   isMonsterExpJourneyStep,
 } from "@/exp/types/exp-journey";
-import type { LevelExpPoint } from "@/exp/types/exp-point";
+import type { Exp } from "@/exp/types/journey";
 import { QuestId } from "@/exp/types/quest-id";
 import { cn } from "@/lib/cn";
 import { Fragment, useCallback, useEffect, useState } from "react";
@@ -53,12 +53,11 @@ export function ExpApp() {
                 <div className="whitespace-nowrap">
                   {step.kills} {step.monsterName}
                 </div>
-                <ExpPoint point={step.expPoint} />
+                <ExpPoint point={step.exp} />
               </Fragment>
             ) : (
               <Fragment key={index}>
-                <div>{QuestId[step.questId]}</div>{" "}
-                <ExpPoint point={step.expPoint} />
+                <div>{QuestId[step.questId]}</div> <ExpPoint point={step.exp} />
               </Fragment>
             )
           )}
@@ -94,9 +93,9 @@ export function ExpApp() {
                   setCompletedQuests((prev) => {
                     if (isCompleted) {
                       return prev.filter((questId) => questId !== quest.id);
-                    } else {
-                      return [...prev, quest.id];
                     }
+
+                    return [...prev, quest.id];
                   })
                 }
               />
@@ -110,13 +109,13 @@ export function ExpApp() {
 }
 
 type ExpPointProps = {
-  readonly point: LevelExpPoint;
+  readonly point: Exp;
 };
 
 function ExpPoint({ point }: ExpPointProps) {
   return (
     <div>
-      {point.baseLvl.toFixed(2)}/{point.jobLvl.toFixed(2)}
+      {point.level.baseLvl.toFixed(2)}/{point.level.jobLvl.toFixed(2)}
     </div>
   );
 }
@@ -136,6 +135,10 @@ const useGeneratorWorker = () => {
       } else {
         setValue([event.data.value, false, 0]);
       }
+    };
+
+    worker.onerror = (event) => {
+      console.error(event.message);
     };
 
     return () => worker.terminate(); // Cleanup worker on unmount

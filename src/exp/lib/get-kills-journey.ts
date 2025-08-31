@@ -1,136 +1,80 @@
-import { calcMonsterCount, getLevelExpPoint, getRawExpPoint } from '@/exp/calc';
+import { calcMonsterCount, meetsExpRequirements } from '@/exp/calc';
 import { addReward } from '@/exp/lib/add-reward';
 import type { Monster } from '@/exp/monsters';
-import type {
-  ExpJourneyMonsterStep,
-} from '@/exp/types/exp-journey';
-import type { RawExpPoint } from '@/exp/types/exp-point';
-import type { MonsterContext } from '@/exp/types/monster-context';
-import { QuestId } from '@/exp/types/quest-id';
-import type { CurrentMonster, QueueStep } from '@/exp/types/queue-step';
+import type { CurrentMonster } from '@/exp/types/current-monster';
+import type { ExpJourneyMonsterStep } from '@/exp/types/exp-journey';
+import { Exp } from '@/exp/types/journey';
+import type { QuestId } from '@/exp/types/quest-id';
 
 type Args = {
-  readonly startExp: RawExpPoint;
-  readonly targetExp: RawExpPoint;
-  readonly previousQueueStep: QueueStep;
+  readonly startExp: Exp;
+  readonly targetExp: Exp;
+  readonly currentMonster: CurrentMonster;
+  readonly completedQuests: ReadonlySet<QuestId>;
+};
+
+export type KillsJourney = {
+  readonly steps: ReadonlyArray<ExpJourneyMonsterStep>;
+  readonly totalKills: number;
 };
 
 export const getKillsJourney = ({
   startExp,
   targetExp,
-  previousQueueStep,
-}: Args): [ReadonlyArray<ExpJourneyMonsterStep>, totalKills: number, CurrentMonster] => {
-  const [steps, currentMonster] = getSteps(
-    startExp,
-    targetExp,
-    previousQueueStep.monster,
-    [],
-    previousQueueStep.context.monsters,
-    previousQueueStep.completedQuests,
-  );
+  currentMonster,
+  completedQuests,
+}: Args): KillsJourney => {
+  const relevantThresholds =
+    currentMonster.getRelevantThresholds(completedQuests);
+
+  const steps: Array<ExpJourneyMonsterStep> = [];
+
+  let currentExp = startExp;
+
+  for (const [index, threshold] of relevantThresholds.entries()) {
+    const thresholdStep = (() => {
+      if (!threshold.next || index >= relevantThresholds.length - 1) {
+        return null;
+      }
+
+      const thresholdTarget = new Exp({
+        baseLvl: threshold.next.baseLevel,
+        jobLvl: 1,
+      });
+
+      return getStep(currentExp, thresholdTarget, threshold.current.monster);
+    })();
+
+    const targetStep = getStep(
+      currentExp,
+      targetExp,
+      threshold.current.monster,
+    );
+
+    if (thresholdStep && !meetsExpRequirements(thresholdStep.exp, targetExp)) {
+      currentExp = thresholdStep.exp;
+      steps.push(thresholdStep);
+      continue;
+    }
+
+    currentExp = targetStep.exp;
+    steps.push(targetStep);
+    break;
+  }
+
+  currentMonster.catchUp(currentExp, completedQuests);
 
   const totalKills = steps.reduce(
     (totalKills, step) => totalKills + step.kills,
     0,
   );
 
-  return [steps, totalKills, currentMonster];
-};
-
-const getSteps = (
-  startExp: RawExpPoint,
-  targetExp: RawExpPoint,
-  currentMonster: CurrentMonster,
-  accumulatedSteps: ReadonlyArray<ExpJourneyMonsterStep>,
-  monsters: MonsterContext,
-  completedQuests: ReadonlySet<QuestId>,
-): [ReadonlyArray<ExpJourneyMonsterStep>, CurrentMonster] => {
-  const addStep = (
-    startExp: RawExpPoint,
-    targetExp: RawExpPoint,
-    monster: Monster,
-  ): ReadonlyArray<ExpJourneyMonsterStep> => [
-    ...accumulatedSteps,
-    getStep(startExp, targetExp, monster),
-  ];
-
-  if (currentMonster.isLast) {
-    return [
-      addStep(startExp, targetExp, currentMonster.monster),
-      currentMonster,
-    ];
-  }
-
-  const nextThresholdIndex = currentMonster.thresholdIndex + 1;
-  const nextMonsterThreshold = monsters.thresholds[nextThresholdIndex];
-
-  if (!nextMonsterThreshold) {
-    return [
-      addStep(startExp, targetExp, currentMonster.monster),
-      currentMonster,
-    ];
-  }
-
-  const [nextMonsterId, { baseLevel: nextMonsterBaseLevel, quests: nextMonsterQuests }] = nextMonsterThreshold;
-  const isQuestPrereqMet = !nextMonsterQuests.difference(completedQuests).size;
-
-  if (!isQuestPrereqMet) {
-    return [
-      addStep(startExp, targetExp, currentMonster.monster),
-      currentMonster,
-    ];
-  }
-
-  const nextMonster = monsters.get(nextMonsterId);
-  const nextCurrentMonster: CurrentMonster = {
-    isLast: nextThresholdIndex >= monsters.thresholds.length - 1,
-    monster: nextMonster,
-    thresholdIndex: nextThresholdIndex,
-  };
-
-  const startLevel = getLevelExpPoint(startExp);
-
-  if (startLevel.baseLvl >= nextMonsterBaseLevel) {
-    return getSteps(
-      startExp,
-      targetExp,
-      nextCurrentMonster,
-      accumulatedSteps,
-      monsters,
-      completedQuests,
-    );
-  }
-
-  const targetLevel = getLevelExpPoint(targetExp);
-
-  if (targetLevel.baseLvl <= nextMonsterBaseLevel) {
-    return [
-      addStep(startExp, targetExp, currentMonster.monster),
-      currentMonster,
-    ];
-  }
-
-  const nextMonsterExp = getRawExpPoint({
-    baseLvl: nextMonsterBaseLevel,
-    jobLvl: 1,
-  });
-
-  const steps = addStep(startExp, nextMonsterExp, currentMonster.monster);
-  const nextExp = steps[steps.length - 1]?.expPoint;
-
-  return getSteps(
-    nextExp ? getRawExpPoint(nextExp) : nextMonsterExp,
-    targetExp,
-    nextCurrentMonster,
-    steps,
-    monsters,
-    completedQuests,
-  );
+  return { steps, totalKills };
 };
 
 const getStep = (
-  startExp: RawExpPoint,
-  targetExp: RawExpPoint,
+  startExp: Exp,
+  targetExp: Exp,
   monster: Monster,
 ): ExpJourneyMonsterStep => {
   const [kills, reward] = calcMonsterCount(startExp, targetExp, monster);
@@ -142,6 +86,6 @@ const getStep = (
     monsterId: monster.id,
     monsterName: monster.name,
     kills,
-    expPoint: getLevelExpPoint(newExp),
+    exp: newExp,
   };
 };

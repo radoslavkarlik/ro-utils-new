@@ -29,19 +29,8 @@ export type MonsterQuest = {
 export type Quest = ExpQuest | MonsterQuest;
 
 export const isExpQuest = (quest: Quest): quest is ExpQuest =>
-  quest.type === 'exp'
+  quest.type === 'exp';
 
 export const getRewardsArray = (
   reward: ExpReward | ReadonlyArray<ExpReward>,
 ): ReadonlyArray<ExpReward> => (isArray(reward) ? reward : [reward]);
-
-export const getTotalExpReward = (
-  rewards: ReadonlyArray<ExpReward>,
-): ExpReward =>
-  rewards.reduce<ExpReward>(
-    (total, reward) => ({
-      base: total.base + reward.base,
-      job: total.job + reward.job,
-    }),
-    { base: 0, job: 0 },
-  );

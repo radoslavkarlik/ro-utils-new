@@ -1,15 +1,8 @@
 import { type Monster, getMonsters } from '@/exp/monsters';
 import type { MonsterId } from '@/exp/types/monster-id';
-import { QuestId } from '@/exp/types/quest-id';
-import { numericallyAsc, sortByProp } from '@/lib/sort-by';
-
-export type MonsterThreshold = readonly [MonsterId, {
-  readonly baseLevel: number;
-  readonly quests: ReadonlySet<QuestId>;
-}];
 
 export type MonsterContext = {
-  readonly thresholds: ReadonlyArray<MonsterThreshold>;
+  readonly allMonsters: ReadonlyArray<Monster>;
   readonly get: (id: MonsterId) => Monster;
 };
 
@@ -29,26 +22,10 @@ export const getMonsterContext = (
     return monster;
   };
 
-  const thresholds = allowedMonsters
-    .values()
-    .map(get)
-    .map<MonsterThreshold>((monster) => [
-      monster.id,
-      { 
-        baseLevel: monster.prerequisite?.baseLevel ?? 1,
-        quests: monster.prerequisite?.questId ? new Set([monster.prerequisite.questId]) : new Set()
-      }
-    ])
-    .toArray()
-    .sort(
-      sortByProp({
-        select: ([, { baseLevel }]) => baseLevel,
-        compare: numericallyAsc,
-      }),
-    )
+  const allMonsters = allowedMonsters.values().map(get).toArray();
 
   return {
+    allMonsters,
     get,
-    thresholds,
   };
 };

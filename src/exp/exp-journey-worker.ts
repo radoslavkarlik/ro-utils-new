@@ -1,42 +1,63 @@
 import { getExpJourney } from '@/exp/lib/get-exp-journey';
+import { Exp } from '@/exp/types/journey';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
+import { enableMapSet } from 'immer';
+
+enableMapSet();
 
 export type ExpJourneyWorkerArgs = {
   readonly baseLvl: number;
   readonly jobLvl: number;
   readonly completedQuests: ReadonlyArray<QuestId>;
-}
+};
 
 self.onmessage = (event) => {
-  const { baseLvl, jobLvl, completedQuests } = event.data as ExpJourneyWorkerArgs;
+  const { baseLvl, jobLvl, completedQuests } =
+    event.data as ExpJourneyWorkerArgs;
 
   const start = performance.now();
-  const generator = getExpJourney({
-    start: { baseLvl, jobLvl },
-    target: { jobLvl: 50, baseLvl: 1 },
-    // allowedQuests: Object.values(QuestId).filter(
-    //   (q) =>
-    //     q !== QuestId.LostChild &&
-    //     q !== QuestId.RachelSanctuary1 &&
-    //     q !== QuestId.RachelSanctuary2 &&
-    //     q !== QuestId.RachelSanctuarySiroma,
-    // ),
-    allowedQuests: new Set(Object.values(QuestId)),
-    allowedMonsters: new Set([
-      MonsterId.Spore,
-      // MonsterId.Metaling,
-      MonsterId.Muka,
-      MonsterId.Wolf,
-    ]),
-    completedQuests: new Set(completedQuests),
-  });
 
-  for (const value of generator) {
-    self.postMessage({ value, done: false });
+  try {
+    const generator = getExpJourney({
+      start: new Exp({ baseLvl, jobLvl }),
+      target: new Exp({ jobLvl: 50, baseLvl: 1 }),
+      // allowedQuests: Object.values(QuestId).filter(
+      //   (q) =>
+      //     q !== QuestId.LostChild &&
+      //     q !== QuestId.RachelSanctuary1 &&
+      //     q !== QuestId.RachelSanctuary2 &&
+      //     q !== QuestId.RachelSanctuarySiroma,
+      // ),
+      allowedQuests: new Set(Object.values(QuestId)),
+      allowedMonsters: new Set([
+        MonsterId.Spore,
+        // MonsterId.Metaling,
+        MonsterId.Muka,
+        MonsterId.Wolf,
+      ]),
+      completedQuests: new Set(completedQuests),
+    });
+
+    for (const value of generator) {
+      self.postMessage({
+        value: value.map((step) => ({
+          ...step,
+          exp: {
+            level: step.exp.level,
+          },
+        })),
+        done: false,
+      });
+    }
+
+    const end = performance.now();
+    const seconds = (end - start) / 1000;
+    self.postMessage({ value: seconds, done: true });
+  } catch (error) {
+    console.error(error);
+    const end = performance.now();
+    const seconds = (end - start) / 1000;
+    self.postMessage({ value: seconds, done: true });
   }
-
-  const end = performance.now();
-  const seconds = (end - start) / 1000;
-  self.postMessage({ value: seconds, done: true });
 };

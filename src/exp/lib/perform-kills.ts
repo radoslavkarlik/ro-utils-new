@@ -1,23 +1,24 @@
-import { getRawExpPoint } from '@/exp/calc';
 import { getKillsJourney } from '@/exp/lib/get-kills-journey';
-import { mergeJourneys } from '@/exp/lib/merge-journeys';
-import type { QueueStep } from '@/exp/types/queue-step';
+import type { Journey } from '@/exp/types/journey';
 
-export const performKills = (previousStep: QueueStep): QueueStep => {
-  const [killsJourney, totalKills, currentMonster] = getKillsJourney({
-    startExp: previousStep.exp,
-    targetExp: previousStep.context.targetExp,
-    previousQueueStep: previousStep,
+export const performKills = (
+  journey: Journey,
+  getBestJourneyKills: () => number,
+): Journey | null => {
+  const newJourney = journey.split();
+
+  const killsJourney = getKillsJourney({
+    startExp: newJourney.exp,
+    targetExp: newJourney.context.targetExp,
+    currentMonster: newJourney.monster,
+    completedQuests: newJourney.quests.completedQuests,
   });
 
-  const finishedLevel = killsJourney[killsJourney.length - 1]?.expPoint;
-  const exp = finishedLevel ? getRawExpPoint(finishedLevel) : previousStep.exp;
+  newJourney.addKills(killsJourney);
 
-  return {
-    ...previousStep,
-    monster: currentMonster,
-    kills: previousStep.kills + totalKills,
-    exp,
-    journey: mergeJourneys(previousStep.journey, killsJourney),
-  };
+  if (newJourney.totalKills >= getBestJourneyKills()) {
+    return null;
+  }
+
+  return newJourney;
 };

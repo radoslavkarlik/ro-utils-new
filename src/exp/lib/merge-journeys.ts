@@ -12,6 +12,6 @@ export const mergeJourneys = (
     (newJourney, step) =>
       isMonsterExpJourneyStep(step)
         ? addMonsterJourneyStep(newJourney, step)
-        : newJourney,
+        : newJourney.concat(step),
     journey,
   );
