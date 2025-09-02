@@ -42,5 +42,7 @@ work with OVERLEVEL_PROTECTION
 
 
 sort by estimated total kills but remove only by actual total kills
-without metaling skips rachel sanc 2 - probably overleveling too much?
+without metaling skips rachel sanc 2 - probably overleveling too much? add ignore overlevel under specific conditions - like always, or only when reaching target goal shortly etc 
+- add extra UI stuff like decisions to kill monsters to prevent overlevel and also that some exp were potentionally wasted
 binary search tree for overlevel protection
+find minimum level test

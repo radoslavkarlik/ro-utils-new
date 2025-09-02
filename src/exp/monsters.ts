@@ -15,7 +15,7 @@ export type Monster = {
   readonly prerequisite?: MonsterPrerequisite;
 };
 
-const monsters: Record<MonsterId, Monster> = {
+export const monsters: Record<MonsterId, Monster> = {
   [MonsterId.Spore]: {
     id: MonsterId.Spore,
     name: 'Spore',

@@ -1,6 +1,6 @@
 import { getExpJourney } from '@/exp/lib/get-exp-journey';
 import { Exp } from '@/exp/types/journey';
-import { MonsterId } from '@/exp/types/monster-id';
+import type { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
 import { enableMapSet } from 'immer';
 
@@ -10,10 +10,11 @@ export type ExpJourneyWorkerArgs = {
   readonly baseLvl: number;
   readonly jobLvl: number;
   readonly completedQuests: ReadonlyArray<QuestId>;
+  readonly allowedMonsters: ReadonlyArray<MonsterId>;
 };
 
 self.onmessage = (event) => {
-  const { baseLvl, jobLvl, completedQuests } =
+  const { baseLvl, jobLvl, completedQuests, allowedMonsters } =
     event.data as ExpJourneyWorkerArgs;
 
   const start = performance.now();
@@ -30,12 +31,7 @@ self.onmessage = (event) => {
       //     q !== QuestId.RachelSanctuarySiroma,
       // ),
       allowedQuests: new Set(Object.values(QuestId)),
-      allowedMonsters: new Set([
-        MonsterId.Spore,
-        // MonsterId.Metaling,
-        MonsterId.Muka,
-        MonsterId.Wolf,
-      ]),
+      allowedMonsters: new Set(allowedMonsters),
       completedQuests: new Set(completedQuests),
     });
 

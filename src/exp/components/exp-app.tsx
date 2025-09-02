@@ -1,11 +1,13 @@
 import type { ExpJourneyWorkerArgs } from "@/exp/exp-journey-worker";
 import WorkerURL from "@/exp/exp-journey-worker.ts?worker";
+import { monsters } from "@/exp/monsters";
 import { quests } from "@/exp/quests";
 import {
   type ExpJourney,
   isMonsterExpJourneyStep,
 } from "@/exp/types/exp-journey";
 import type { Exp } from "@/exp/types/journey";
+import { MonsterId } from "@/exp/types/monster-id";
 import { QuestId } from "@/exp/types/quest-id";
 import { cn } from "@/lib/cn";
 import { Fragment, useCallback, useEffect, useState } from "react";
@@ -16,15 +18,23 @@ export function ExpApp() {
   const [completedQuests, setCompletedQuests] = useState<
     ReadonlyArray<QuestId>
   >([]);
+  const [allowedMonsters, setAllowedMonsters] = useState<
+    ReadonlyArray<MonsterId>
+  >([MonsterId.Spore, MonsterId.Muka, MonsterId.Wolf, MonsterId.Metaling]);
 
   const { value, startGenerator } = useGeneratorWorker();
   const [steps, isFinished, totalSeconds] = value;
 
   useEffect(() => {
-    const cleanUp = startGenerator({ baseLvl, jobLvl, completedQuests });
+    const cleanUp = startGenerator({
+      baseLvl,
+      jobLvl,
+      completedQuests,
+      allowedMonsters,
+    });
 
     return () => cleanUp();
-  }, [baseLvl, jobLvl, completedQuests, startGenerator]);
+  }, [baseLvl, jobLvl, completedQuests, allowedMonsters, startGenerator]);
 
   return (
     <div className="flex gap-3">
@@ -85,7 +95,7 @@ export function ExpApp() {
           const isCompleted = completedQuests.includes(quest.id);
 
           return (
-            <label key={quest.id}>
+            <label key={quest.id} className="flex gap-1">
               <input
                 type="checkbox"
                 defaultChecked={isCompleted}
@@ -100,6 +110,32 @@ export function ExpApp() {
                 }
               />
               {quest.id}
+            </label>
+          );
+        })}
+      </div>
+      <div className="flex flex-col gap-1">
+        {Object.values(monsters).map((monster) => {
+          const isAllowed = allowedMonsters.includes(monster.id);
+
+          return (
+            <label key={monster.id} className="flex gap-1">
+              <input
+                type="checkbox"
+                defaultChecked={isAllowed}
+                onChange={() =>
+                  setAllowedMonsters((prev) => {
+                    if (isAllowed) {
+                      return prev.filter(
+                        (monsterId) => monsterId !== monster.id
+                      );
+                    }
+
+                    return [...prev, monster.id];
+                  })
+                }
+              />
+              {monster.name}
             </label>
           );
         })}
