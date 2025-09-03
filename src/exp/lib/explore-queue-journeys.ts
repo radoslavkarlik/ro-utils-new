@@ -6,10 +6,12 @@ export function* exploreQueueJourneys(
   journey: Journey,
   getBestJourneyKills: () => number,
 ): Generator<Journey> {
-  const finalMonsterJourney = performKills(journey, getBestJourneyKills);
+  if (journey.isValid) {
+    const finalMonsterJourney = performKills(journey, getBestJourneyKills);
 
-  if (finalMonsterJourney) {
-    yield finalMonsterJourney;
+    if (finalMonsterJourney) {
+      yield finalMonsterJourney;
+    }
   }
 
   const newQuestJourneys = journey.quests.availableQuests

@@ -4,4 +4,5 @@ export type QuestJourney = {
   readonly completedQuests: ReadonlySet<QuestId>;
   readonly availableQuests: ReadonlySet<QuestId>;
   readonly lockedQuests: ReadonlySet<QuestId>;
+  readonly mandatoryQuests: ReadonlyArray<ReadonlySet<QuestId>>;
 };

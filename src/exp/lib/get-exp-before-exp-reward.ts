@@ -47,12 +47,10 @@ export const getExpBeforeExpReward = (
         totalExp = addReward(totalExp, cappedReward);
 
         if (
-          totalExp.level.baseLvl === maxBaseLevel ||
-          totalExp.level.jobLvl === maxJobLevel
+          totalExp.level.baseLvl + 1 >= maxBaseLevel ||
+          totalExp.level.jobLvl + 1 >= maxJobLevel
         ) {
-          // TODO reached max level = useless step as there is a separate perform kills step
-          // TODO handle overlevel properly, allow to use only for reaching max level
-          return false;
+          break;
         }
 
         if (cappedReward.base < reward.base || cappedReward.job < reward.job) {

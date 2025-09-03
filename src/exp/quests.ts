@@ -13,6 +13,7 @@ export const quests: Record<QuestId, Quest> = {
       monsterId: MonsterId.Zombie,
       count: 6,
     },
+    isPrerequisiteOnly: true,
   },
   [QuestId.AcolyteTraining]: {
     type: 'exp',
@@ -67,6 +68,7 @@ export const quests: Record<QuestId, Quest> = {
       monsterId: MonsterId.Siroma,
       count: 400,
     },
+    isPrerequisiteOnly: true,
   },
   [QuestId.RachelSanctuary2]: {
     type: 'exp',

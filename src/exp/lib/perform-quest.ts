@@ -91,7 +91,7 @@ export const performQuest = (
     }
   }
 
-  newJourney.completeQuest(questId);
+  newJourney.completeQuest(quest);
   newJourney.monster.catchUp(newJourney.exp, newJourney.quests.completedQuests);
 
   return newJourney;

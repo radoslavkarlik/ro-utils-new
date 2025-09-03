@@ -14,10 +14,10 @@ import {
   type RawExpPoint,
 } from '@/exp/types/exp-point';
 import type { JourneyContext } from '@/exp/types/journey-context';
-import type { QuestId } from '@/exp/types/quest-id';
 import type { QuestJourney } from '@/exp/types/quest-journey';
 import type { CurrentMonster } from '@/exp/types/current-monster';
 import { produce } from 'immer';
+import type { Quest } from '@/exp/types/quest';
 
 export class Exp {
   #baseExp = 0;
@@ -117,6 +117,16 @@ export class Journey {
     return meetsExpRequirements(this.#exp, this.#context.targetExp);
   }
 
+  public get isValid(): boolean {
+    return this.#quests.mandatoryQuests.every((mandatoryQuests) =>
+      mandatoryQuests
+        .values()
+        .some((mandatoryQuest) =>
+          this.#quests.completedQuests.has(mandatoryQuest),
+        ),
+    );
+  }
+
   private addSteps(steps: ReadonlyArray<ExpJourneyStep>): void {
     this.#steps = mergeJourneys(this.#steps, steps);
   }
@@ -138,7 +148,9 @@ export class Journey {
     this.addSteps([step]);
   }
 
-  public completeQuest(questId: QuestId): void {
+  public completeQuest(quest: Quest): void {
+    const questId = quest.id;
+
     this.#quests = produce(this.#quests, (quests) => {
       quests.completedQuests.add(questId);
       quests.availableQuests.delete(questId);
@@ -157,6 +169,14 @@ export class Journey {
       for (const quest of unlockedQuests) {
         quests.availableQuests.add(quest.id);
         quests.lockedQuests.delete(quest.id);
+      }
+
+      if (quest.isPrerequisiteOnly) {
+        const mandatoryQuests = this.#context.quests.allQuests
+          .filter((quest) => quest.prerequisite?.questIds?.includes(questId))
+          .map((quest) => quest.id);
+
+        quests.mandatoryQuests.push(new Set(mandatoryQuests));
       }
     });
   }

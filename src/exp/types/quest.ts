@@ -12,18 +12,20 @@ export type QuestPrerequisite = {
 export type ExpQuest = {
   readonly type: 'exp';
   readonly id: QuestId;
-  readonly prerequisite?: QuestPrerequisite;
   readonly reward: ExpReward | ReadonlyArray<ExpReward>;
+  readonly prerequisite?: QuestPrerequisite;
+  readonly isPrerequisiteOnly?: boolean;
 };
 
 export type MonsterQuest = {
   readonly type: 'monster';
   readonly id: QuestId;
-  readonly prerequisite?: undefined;
   readonly kills: {
     readonly monsterId: MonsterId;
     readonly count: number;
   };
+  readonly prerequisite?: undefined;
+  readonly isPrerequisiteOnly?: boolean;
 };
 
 export type Quest = ExpQuest | MonsterQuest;

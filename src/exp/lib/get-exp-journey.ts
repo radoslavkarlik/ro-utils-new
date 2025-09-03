@@ -55,6 +55,7 @@ export function* getExpJourney({
     completedQuests,
     availableQuests: new Set(availableQuests),
     lockedQuests: new Set(lockedQuests),
+    mandatoryQuests: [],
   };
 
   const context: JourneyContext = {
@@ -84,7 +85,10 @@ export function* getExpJourney({
         continue;
       }
 
-      if (bestJourney && compareJourneys(nextJourney, bestJourney) >= 0) {
+      if (
+        !nextJourney.isValid ||
+        (bestJourney && compareJourneys(nextJourney, bestJourney) >= 0)
+      ) {
         continue;
       }
 
