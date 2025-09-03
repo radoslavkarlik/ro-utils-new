@@ -4,7 +4,7 @@ import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
 };
 import type { ExpReward } from '@/exp/types/exp-reward';
 import type { Monster } from './monsters';
-import type { Exp } from '@/exp/types/journey';
+import type { Exp } from '@/exp/types/exp';
 
 export const maxBaseLevel =
   Number(Object.keys(baseExpChart).toReversed()[0]) || 1;

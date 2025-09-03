@@ -1,5 +1,5 @@
 import type { ExpReward } from '@/exp/types/exp-reward';
-import type { Exp, Journey } from '@/exp/types/journey';
+import type { Journey } from '@/exp/types/journey';
 import jobExpChart from '@/data/job-exp-chart-first-class.json' with {
   type: 'json',
 };
@@ -8,6 +8,7 @@ import { capExpReward, getBaseExp } from '@/exp/calc';
 import { addReward } from '@/exp/lib/add-reward';
 import type { KillsJourney } from '@/exp/lib/get-kills-journey';
 import { produce } from 'immer';
+import type { Exp } from '@/exp/types/exp';
 
 export const maxBaseLevel =
   Number(Object.keys(baseExpChart).toReversed()[0]) || 1;

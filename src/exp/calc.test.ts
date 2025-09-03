@@ -1,7 +1,6 @@
 import { capExpReward, getBaseLevel, getJobLevel } from '@/exp/calc';
-import { MIN_EXP_REWARD } from '@/exp/constants';
 import type { ExpReward } from './types/exp-reward';
-import { Exp } from '@/exp/types/journey';
+import { Exp } from '@/exp/types/exp';
 
 describe('capExpReward', () => {
   test('returns cap exp when overlevel', () => {
@@ -11,12 +10,12 @@ describe('capExpReward', () => {
     });
 
     const result = capExpReward(level, {
-      base: MIN_EXP_REWARD,
+      base: 1,
       job: 900_000,
     });
 
     expect(result).toEqual({
-      base: MIN_EXP_REWARD,
+      base: 1,
       job: 819589,
     } satisfies ExpReward);
   });
@@ -28,12 +27,12 @@ describe('capExpReward', () => {
     });
 
     const result = capExpReward(level, {
-      base: MIN_EXP_REWARD,
+      base: 1,
       job: 900_000,
     });
 
     expect(result).toEqual({
-      base: MIN_EXP_REWARD,
+      base: 1,
       job: 900_000,
     } satisfies ExpReward);
   });

@@ -1,5 +1,5 @@
 import type { Monster } from '@/exp/monsters';
-import type { Exp } from '@/exp/types/journey';
+import type { Exp } from '@/exp/types/exp';
 import type { QuestId } from '@/exp/types/quest-id';
 import { numericallyAsc, sortByProp } from '@/lib/sort-by';
 

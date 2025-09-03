@@ -1,4 +1,4 @@
-import type { Exp } from '@/exp/types/journey';
+import type { Exp } from '@/exp/types/exp';
 import type { MonsterId } from '@/exp/types/monster-id';
 import type { QuestId } from '@/exp/types/quest-id';
 

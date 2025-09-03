@@ -1,4 +1,4 @@
-import type { Exp } from '@/exp/types/journey';
+import type { Exp } from '@/exp/types/exp';
 import type { MonsterContext } from '@/exp/types/monster-context';
 import type { OvercapSettings } from '@/exp/types/overcap-settings';
 import type { QuestContext } from '@/exp/types/quest-context';

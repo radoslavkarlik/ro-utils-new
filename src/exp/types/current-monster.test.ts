@@ -1,5 +1,5 @@
 import { CurrentMonster } from '@/exp/types/current-monster';
-import { Exp } from '@/exp/types/journey';
+import { Exp } from '@/exp/types/exp';
 import { getMonsterContext } from '@/exp/types/monster-context';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';

@@ -1,5 +1,5 @@
 import { getExpJourney } from '@/exp/lib/get-exp-journey';
-import { Exp } from '@/exp/types/journey';
+import { Exp } from '@/exp/types/exp';
 import { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
 import { enableMapSet } from 'immer';
@@ -18,6 +18,14 @@ describe('', () => {
         MonsterId.Wolf,
       ]),
       completedQuests: new Set(),
+      expRates: {
+        quest: 1,
+        monster: 1,
+      },
+      overcapSettings: {
+        ignoreOverlevel: 'short-of-target',
+        allowPercentWaste: 10,
+      },
     }).toArray();
   });
 });

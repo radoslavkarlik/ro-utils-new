@@ -2,11 +2,12 @@ import type { ExpJourneyWorkerArgs } from "@/exp/exp-journey-worker";
 import WorkerURL from "@/exp/exp-journey-worker.ts?worker";
 import { monsters } from "@/exp/monsters";
 import { quests } from "@/exp/quests";
+import { emptyExp } from "@/exp/types/exp";
 import {
   type ExpJourney,
   isMonsterExpJourneyStep,
 } from "@/exp/types/exp-journey";
-import type { Exp } from "@/exp/types/journey";
+import type { Exp } from "@/exp/types/exp";
 import { MonsterId } from "@/exp/types/monster-id";
 import {
   ignoreOverlevelSettings,
@@ -14,8 +15,13 @@ import {
 } from "@/exp/types/overcap-settings";
 import { QuestId } from "@/exp/types/quest-id";
 import { cn } from "@/lib/cn";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
+import { subtractRawExp } from "@/exp/types/exp-point";
+import { getRewardsArray } from "@/exp/types/quest";
+import { addRewards, emptyReward } from "@/exp/types/exp-reward";
+import type { ExpRates } from "@/exp/types/exp-rates";
+import { getQuestContext } from "@/exp/types/quest-context";
 
 export function ExpApp() {
   const [startBaseLvl, setStartBaseLvl] = useState(11);
@@ -38,7 +44,17 @@ export function ExpApp() {
   >([MonsterId.Spore, MonsterId.Muka, MonsterId.Wolf, MonsterId.Metaling]);
 
   const { value, startGenerator } = useGeneratorWorker();
-  const [steps, isFinished, totalSeconds] = value;
+  const [{ steps, expRates }, isFinished, totalSeconds] = value;
+
+  const questsContext = useMemo(
+    () =>
+      getQuestContext(
+        new Set(Object.values(QuestId)),
+        new Set(),
+        expRates.quest
+      ),
+    [expRates]
+  );
 
   useEffect(() => {
     const cleanUp = startGenerator({
@@ -196,20 +212,70 @@ export function ExpApp() {
           <div className="col-span-full font-semibold text-black">
             Journey path
           </div>
-          {steps.map((step, index) =>
-            isMonsterExpJourneyStep(step) ? (
+          {steps.map((step, index) => {
+            if (isMonsterExpJourneyStep(step)) {
+              return (
+                <Fragment key={index}>
+                  <div className="whitespace-nowrap">
+                    {step.kills} {step.monsterName}
+                  </div>
+                  <ExpPoint point={step.exp} />
+                </Fragment>
+              );
+            }
+
+            const quest = questsContext.get(step.questId);
+            const isExpQuest = quest.type === "exp";
+
+            const [lostBasePercent, lostJobPercent] = ((): [number, number] => {
+              if (!isExpQuest) {
+                return [0, 0];
+              }
+
+              const previousStepExp = steps[index - 1]?.exp ?? emptyExp;
+
+              const gainedExp = subtractRawExp(
+                step.exp.raw,
+                previousStepExp.raw
+              );
+
+              const questExp = getRewardsArray(quest.reward).reduce(
+                (acc, reward) => addRewards(acc, reward),
+                emptyReward
+              );
+
+              const lostBasePercent =
+                (1 - gainedExp.baseExp / questExp.base) * 100;
+              const lostJobPercent =
+                (1 - gainedExp.jobExp / questExp.job) * 100;
+
+              return [lostBasePercent, lostJobPercent];
+            })();
+
+            const hasLoss = lostBasePercent > 0 || lostJobPercent > 0;
+            const lostBoth = lostBasePercent > 0 && lostJobPercent > 0;
+
+            return (
               <Fragment key={index}>
-                <div className="whitespace-nowrap">
-                  {step.kills} {step.monsterName}
-                </div>
+                <div className="flex gap-1">
+                  <span>{QuestId[step.questId]}</span>
+                  <span className="whitespace-nowrap text-red-700">
+                    {hasLoss &&
+                      ` (${
+                        lostBasePercent
+                          ? `Base: ${lostBasePercent.toFixed(2)}`
+                          : ""
+                      }${lostBoth ? "%/" : ""}${
+                        lostJobPercent
+                          ? `Job: ${lostJobPercent.toFixed(2)}`
+                          : ""
+                      })%`}
+                  </span>
+                </div>{" "}
                 <ExpPoint point={step.exp} />
               </Fragment>
-            ) : (
-              <Fragment key={index}>
-                <div>{QuestId[step.questId]}</div> <ExpPoint point={step.exp} />
-              </Fragment>
-            )
-          )}
+            );
+          })}
           <div className="mt-3">
             {isFinished && <div>Seconds: {totalSeconds}</div>}
             {Object.entries(
@@ -298,11 +364,13 @@ function ExpPoint({ point }: ExpPointProps) {
 }
 
 const useGeneratorWorker = () => {
-  const [value, setValue] = useState<[ExpJourney, boolean, number]>([
-    [],
-    false,
-    0,
-  ]);
+  const [value, setValue] = useState<
+    [
+      { readonly steps: ExpJourney; readonly expRates: ExpRates },
+      boolean,
+      number
+    ]
+  >([{ steps: [], expRates: { quest: 1, monster: 1 } }, false, 0]);
   const [worker, setWorker] = useState(new WorkerURL());
 
   useEffect(() => {

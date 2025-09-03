@@ -3,7 +3,7 @@ import { addReward } from '@/exp/lib/add-reward';
 import type { Monster } from '@/exp/monsters';
 import type { CurrentMonster } from '@/exp/types/current-monster';
 import type { ExpJourneyMonsterStep } from '@/exp/types/exp-journey';
-import { Exp } from '@/exp/types/journey';
+import { Exp } from '@/exp/types/exp';
 import type { QuestId } from '@/exp/types/quest-id';
 
 type Args = {

@@ -1,6 +1,6 @@
 import { getExpJourney } from '@/exp/lib/get-exp-journey';
 import type { ExpRates } from '@/exp/types/exp-rates';
-import { Exp } from '@/exp/types/journey';
+import { Exp } from '@/exp/types/exp';
 import type { MonsterId } from '@/exp/types/monster-id';
 import type { OvercapSettings } from '@/exp/types/overcap-settings';
 import { QuestId } from '@/exp/types/quest-id';
@@ -46,12 +46,16 @@ self.onmessage = (event) => {
 
     for (const value of generator) {
       self.postMessage({
-        value: value.map((step) => ({
-          ...step,
-          exp: {
-            level: step.exp.level,
-          },
-        })),
+        value: {
+          steps: value.map((step) => ({
+            ...step,
+            exp: {
+              level: step.exp.level,
+              raw: step.exp.raw,
+            },
+          })),
+          expRates,
+        },
         done: false,
       });
     }

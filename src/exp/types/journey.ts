@@ -1,58 +1,13 @@
-import {
-  getBaseExp,
-  getBaseLevel,
-  getJobExp,
-  getJobLevel,
-  meetsExpRequirements,
-} from '@/exp/calc';
+import { meetsExpRequirements } from '@/exp/calc';
 import type { KillsJourney } from '@/exp/lib/get-kills-journey';
 import { mergeJourneys } from '@/exp/lib/merge-journeys';
 import type { ExpJourneyStep } from '@/exp/types/exp-journey';
-import {
-  isRawExpPoint,
-  type LevelExpPoint,
-  type RawExpPoint,
-} from '@/exp/types/exp-point';
 import type { JourneyContext } from '@/exp/types/journey-context';
 import type { QuestJourney } from '@/exp/types/quest-journey';
 import type { CurrentMonster } from '@/exp/types/current-monster';
 import { produce } from 'immer';
 import type { Quest } from '@/exp/types/quest';
-
-export class Exp {
-  #baseExp = 0;
-  #jobExp = 0;
-  #baseLvl = 0;
-  #jobLvl = 0;
-
-  constructor(exp: LevelExpPoint | RawExpPoint) {
-    if (isRawExpPoint(exp)) {
-      this.#baseExp = exp.baseExp;
-      this.#jobExp = exp.jobExp;
-      this.#baseLvl = getBaseLevel(exp.baseExp);
-      this.#jobLvl = getJobLevel(exp.jobExp);
-    } else {
-      this.#baseLvl = exp.baseLvl;
-      this.#jobLvl = exp.jobLvl;
-      this.#baseExp = getBaseExp(exp.baseLvl);
-      this.#jobExp = getJobExp(exp.jobLvl);
-    }
-  }
-
-  public get level(): LevelExpPoint {
-    return {
-      baseLvl: this.#baseLvl,
-      jobLvl: this.#jobLvl,
-    };
-  }
-
-  public get raw(): RawExpPoint {
-    return {
-      baseExp: this.#baseExp,
-      jobExp: this.#jobExp,
-    };
-  }
-}
+import type { Exp } from '@/exp/types/exp';
 
 export class Journey {
   #exp: Exp;

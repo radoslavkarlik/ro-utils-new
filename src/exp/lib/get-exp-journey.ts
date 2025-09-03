@@ -5,13 +5,14 @@ import type { MonsterId } from '@/exp/types/monster-id';
 import type { QuestId } from '@/exp/types/quest-id';
 import { PriorityQueue } from '@/lib/priority-queue';
 import { getQuestContext } from '../types/quest-context';
-import { type Exp, Journey } from '@/exp/types/journey';
+import { Journey } from '@/exp/types/journey';
 import type { JourneyContext } from '@/exp/types/journey-context';
 import type { QuestJourney } from '@/exp/types/quest-journey';
 import type { ExpJourney } from '@/exp/types/exp-journey';
 import { CurrentMonster } from '@/exp/types/current-monster';
 import type { ExpRates } from '@/exp/types/exp-rates';
 import type { OvercapSettings } from '@/exp/types/overcap-settings';
+import type { Exp } from '@/exp/types/exp';
 
 type Args = {
   readonly start: Exp;

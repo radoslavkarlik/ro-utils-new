@@ -2,7 +2,8 @@ import { applyRates, meetsExpRequirements } from '@/exp/calc';
 import { addReward } from '@/exp/lib/add-reward';
 import { getExpBeforeExpReward } from '@/exp/lib/get-exp-before-exp-reward';
 import { getKillsJourney } from '@/exp/lib/get-kills-journey';
-import { Exp, type Journey } from '@/exp/types/journey';
+import { Exp } from '@/exp/types/exp';
+import type { Journey } from '@/exp/types/journey';
 import { getRewardsArray, isExpQuest } from '@/exp/types/quest';
 import type { QuestId } from '@/exp/types/quest-id';
 
