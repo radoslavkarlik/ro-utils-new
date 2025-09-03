@@ -80,54 +80,72 @@ export function ExpApp() {
             <label className="font-medium">Quest rates</label>
             <input
               className="border border-red-700"
+              type="number"
               value={questRates}
-              onChange={(e) =>
-                setQuestRates(Number(e.currentTarget.value) || 1)
-              }
+              onChange={(e) => {
+                if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
+                  setQuestRates(e.currentTarget.valueAsNumber);
+                }
+              }}
             />
             <label className="font-medium">Monster rates</label>
             <input
               className="border border-red-700"
+              type="number"
               value={monsterRates}
-              onChange={(e) =>
-                setMonsterRates(Number(e.currentTarget.value) || 1)
-              }
+              onChange={(e) => {
+                if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
+                  setMonsterRates(e.currentTarget.valueAsNumber);
+                }
+              }}
             />
           </div>
           <div className="col-span-full grid grid-cols-subgrid">
             <label className="font-medium">Start base</label>
             <input
               className="border border-red-700"
+              type="number"
               value={startBaseLvl}
-              onChange={(e) =>
-                setStartBaseLvl(Number(e.currentTarget.value) || 1)
-              }
+              onChange={(e) => {
+                if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
+                  setStartBaseLvl(e.currentTarget.valueAsNumber);
+                }
+              }}
             />
             <label className="font-medium">Start job</label>
             <input
               className="border border-red-700"
+              type="number"
               value={startJobLvl}
-              onChange={(e) =>
-                setStartJobLvl(Number(e.currentTarget.value) || 1)
-              }
+              onChange={(e) => {
+                if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
+                  setStartJobLvl(e.currentTarget.valueAsNumber);
+                }
+              }}
             />
           </div>
           <div className="col-span-full grid grid-cols-subgrid">
             <label className="font-medium">Target base</label>
             <input
               className="border border-red-700"
+              type="number"
               value={targetBaseLvl}
-              onChange={(e) =>
-                setTargetBaseLvl(Number(e.currentTarget.value) || 1)
-              }
+              onChange={(e) => {
+                if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
+                  setTargetBaseLvl(e.currentTarget.valueAsNumber);
+                }
+              }}
             />
             <label className="font-medium">Target job</label>
             <input
               className="border border-red-700"
+              type="number"
               value={targetJobLvl}
-              onChange={(e) =>
-                setTargetJobLvl(Number(e.currentTarget.value) || 1)
-              }
+              onChange={(e) => {
+                if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
+                  setTargetJobLvl(e.currentTarget.valueAsNumber);
+                }
+              }}
             />
           </div>
         </div>
@@ -158,10 +176,13 @@ export function ExpApp() {
             </label>
             <input
               className="border border-red-700"
+              type="number"
               value={allowPercentWaste}
-              onChange={(e) =>
-                setAllowPercentWaste(Number(e.currentTarget.value) || 0)
-              }
+              onChange={(e) => {
+                if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
+                  setAllowPercentWaste(e.currentTarget.valueAsNumber);
+                }
+              }}
             />
           </div>
         </div>
