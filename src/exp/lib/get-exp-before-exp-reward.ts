@@ -18,6 +18,8 @@ export const getExpBeforeExpReward = (
   journey: Journey,
   rewards: ReadonlyArray<ExpReward>,
 ): false | { readonly finishedExp: Exp } => {
+  const { ignoreOverlevel, allowPercentWaste } =
+    journey.context.overcapSettings;
   const relevantThresholds = journey.monster.getRelevantThresholds(
     journey.quests.completedQuests,
   );
@@ -42,18 +44,45 @@ export const getExpBeforeExpReward = (
     ) {
       let totalExp = exp;
 
-      for (const reward of rewards) {
+      rewardsLoop: for (const reward of rewards) {
         const cappedReward = capExpReward(totalExp, reward);
         totalExp = addReward(totalExp, cappedReward);
 
-        if (
-          totalExp.level.baseLvl + 1 >= maxBaseLevel ||
-          totalExp.level.jobLvl + 1 >= maxJobLevel
-        ) {
-          break;
+        switch (ignoreOverlevel) {
+          case 'always':
+            continue;
+
+          case 'short-of-target':
+            if (
+              totalExp.level.baseLvl + 1 >= maxBaseLevel ||
+              totalExp.level.jobLvl + 1 >= maxJobLevel
+            ) {
+              break rewardsLoop;
+            }
+
+            break;
+
+          case 'full-target':
+            if (
+              totalExp.level.baseLvl >= maxBaseLevel ||
+              totalExp.level.jobLvl >= maxJobLevel
+            ) {
+              break rewardsLoop;
+            }
+
+            break;
         }
 
-        if (cappedReward.base < reward.base || cappedReward.job < reward.job) {
+        // TODO percent per single in batch or per total?
+        const allowedMinReward: ExpReward = {
+          base: Math.floor(reward.base * (1 - allowPercentWaste / 100)),
+          job: Math.floor(reward.job * (1 - allowPercentWaste / 100)),
+        };
+
+        if (
+          cappedReward.base < allowedMinReward.base ||
+          cappedReward.job < allowedMinReward.job
+        ) {
           continue epxLoop;
         }
       }
@@ -76,6 +105,8 @@ export const getExpBeforeExpReward = (
 
       break thresholdLoop;
     }
+
+    // TODO if it is here shouldnt it be fail?
 
     if (totalKills > 0) {
       // TODO how can this be 0 at this point?

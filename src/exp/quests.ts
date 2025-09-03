@@ -1,9 +1,10 @@
 import { applyRates } from '@/exp/calc';
-import { MIN_EXP_REWARD } from '@/exp/constants';
 import { MonsterId } from '@/exp/types/monster-id';
 import { type Quest, isExpQuest } from '@/exp/types/quest';
 import { QuestId } from '@/exp/types/quest-id';
 import { isArray } from '@/lib/is-array';
+
+export const MIN_EXP_REWARD = 1;
 
 export const quests: Record<QuestId, Quest> = {
   [QuestId.AcolyteTrainingZombie]: {

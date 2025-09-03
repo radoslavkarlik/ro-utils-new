@@ -8,6 +8,10 @@ import {
 } from "@/exp/types/exp-journey";
 import type { Exp } from "@/exp/types/journey";
 import { MonsterId } from "@/exp/types/monster-id";
+import {
+  ignoreOverlevelSettings,
+  type IgnoreOverlevelSettings,
+} from "@/exp/types/overcap-settings";
 import { QuestId } from "@/exp/types/quest-id";
 import { cn } from "@/lib/cn";
 import { Fragment, useCallback, useEffect, useState } from "react";
@@ -20,6 +24,10 @@ export function ExpApp() {
 
   const [questRates, setQuestRates] = useState(1);
   const [monsterRates, setMonsterRates] = useState(1);
+
+  const [ignoreOverlevel, setIgnoreOverlevel] =
+    useState<IgnoreOverlevelSettings>("short-of-target");
+  const [allowPercentWaste, setAllowPercentWaste] = useState(10);
 
   const [completedQuests, setCompletedQuests] = useState<
     ReadonlyArray<QuestId>
@@ -43,6 +51,10 @@ export function ExpApp() {
         quest: questRates,
         monster: monsterRates,
       },
+      overcapSettings: {
+        ignoreOverlevel,
+        allowPercentWaste,
+      },
     });
 
     return () => cleanUp();
@@ -55,6 +67,8 @@ export function ExpApp() {
     allowedMonsters,
     questRates,
     monsterRates,
+    ignoreOverlevel,
+    allowPercentWaste,
     startGenerator,
   ]);
 
@@ -63,7 +77,7 @@ export function ExpApp() {
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-2 gap-y-1">
           <div className="col-span-full grid grid-cols-subgrid">
-            <label>Quest rates</label>
+            <label className="font-medium">Quest rates</label>
             <input
               className="border border-red-700"
               value={questRates}
@@ -71,7 +85,7 @@ export function ExpApp() {
                 setQuestRates(Number(e.currentTarget.value) || 1)
               }
             />
-            <label>Monster rates</label>
+            <label className="font-medium">Monster rates</label>
             <input
               className="border border-red-700"
               value={monsterRates}
@@ -81,7 +95,7 @@ export function ExpApp() {
             />
           </div>
           <div className="col-span-full grid grid-cols-subgrid">
-            <label>Start base</label>
+            <label className="font-medium">Start base</label>
             <input
               className="border border-red-700"
               value={startBaseLvl}
@@ -89,7 +103,7 @@ export function ExpApp() {
                 setStartBaseLvl(Number(e.currentTarget.value) || 1)
               }
             />
-            <label>Start job</label>
+            <label className="font-medium">Start job</label>
             <input
               className="border border-red-700"
               value={startJobLvl}
@@ -99,7 +113,7 @@ export function ExpApp() {
             />
           </div>
           <div className="col-span-full grid grid-cols-subgrid">
-            <label>Target base</label>
+            <label className="font-medium">Target base</label>
             <input
               className="border border-red-700"
               value={targetBaseLvl}
@@ -107,12 +121,46 @@ export function ExpApp() {
                 setTargetBaseLvl(Number(e.currentTarget.value) || 1)
               }
             />
-            <label>Target job</label>
+            <label className="font-medium">Target job</label>
             <input
               className="border border-red-700"
               value={targetJobLvl}
               onChange={(e) =>
                 setTargetJobLvl(Number(e.currentTarget.value) || 1)
+              }
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-[min-content_min-content] gap-x-2 gap-y-2">
+          <div className="col-span-full grid grid-cols-subgrid">
+            <label className="whitespace-nowrap font-medium">
+              Ignore overlevel
+            </label>
+            <select
+              className="border border-red-700"
+              value={ignoreOverlevel}
+              onChange={(e) =>
+                setIgnoreOverlevel(
+                  e.currentTarget.value as IgnoreOverlevelSettings
+                )
+              }
+            >
+              {ignoreOverlevelSettings.map((setting) => (
+                <option key={setting} value={setting}>
+                  {setting}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-full grid grid-cols-subgrid">
+            <label className="whitespace-nowrap font-medium">
+              Allow percent waste
+            </label>
+            <input
+              className="border border-red-700"
+              value={allowPercentWaste}
+              onChange={(e) =>
+                setAllowPercentWaste(Number(e.currentTarget.value) || 0)
               }
             />
           </div>
@@ -123,6 +171,9 @@ export function ExpApp() {
             isFinished && "text-green-800"
           )}
         >
+          <div className="col-span-full font-semibold text-black">
+            Journey path
+          </div>
           {steps.map((step, index) =>
             isMonsterExpJourneyStep(step) ? (
               <Fragment key={index}>
@@ -157,6 +208,7 @@ export function ExpApp() {
         </div>
       </div>
       <div className="flex flex-col gap-1">
+        <div className="font-medium">Completed quests</div>
         {Object.values(quests).map((quest) => {
           const isCompleted = completedQuests.includes(quest.id);
 
@@ -181,6 +233,7 @@ export function ExpApp() {
         })}
       </div>
       <div className="flex flex-col gap-1">
+        <div className="font-medium">Allowed monsters</div>
         {Object.values(monsters).map((monster) => {
           const isAllowed = allowedMonsters.includes(monster.id);
 

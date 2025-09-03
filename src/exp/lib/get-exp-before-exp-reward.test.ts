@@ -1,5 +1,5 @@
 import { getRawExpPoint } from '@/exp/calc';
-import { MIN_EXP_REWARD } from '@/exp/constants';
+import { MIN_EXP_REWARD } from '@/exp/quests';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
 import { getMonsterContext } from '@/exp/types/monster-context';
 import { MonsterId } from '@/exp/types/monster-id';

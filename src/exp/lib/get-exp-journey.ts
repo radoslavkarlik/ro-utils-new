@@ -11,6 +11,7 @@ import type { QuestJourney } from '@/exp/types/quest-journey';
 import type { ExpJourney } from '@/exp/types/exp-journey';
 import { CurrentMonster } from '@/exp/types/current-monster';
 import type { ExpRates } from '@/exp/types/exp-rates';
+import type { OvercapSettings } from '@/exp/types/overcap-settings';
 
 type Args = {
   readonly start: Exp;
@@ -19,6 +20,7 @@ type Args = {
   readonly allowedMonsters: ReadonlySet<MonsterId>;
   readonly completedQuests: ReadonlySet<QuestId>;
   readonly expRates: ExpRates;
+  readonly overcapSettings: OvercapSettings;
 };
 
 export function* getExpJourney({
@@ -28,6 +30,7 @@ export function* getExpJourney({
   allowedMonsters,
   completedQuests,
   expRates,
+  overcapSettings,
 }: Args): Generator<ExpJourney> {
   const quests = getQuestContext(
     allowedQuests,
@@ -64,6 +67,7 @@ export function* getExpJourney({
     targetExp: target,
     quests,
     monsters,
+    overcapSettings,
   };
 
   let bestJourney: Journey | null = null;
