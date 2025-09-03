@@ -13,8 +13,7 @@ code quality
 choose monsters from db
 quests from db?
 
-Allow user to choose exp tables and rates
-Different goals agnostic? Its kind of job 50 now only
+Allow user to choose exp tables
 
 Better metric - time to kill mob, do quest, number of quests
 Better UI

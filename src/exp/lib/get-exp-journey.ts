@@ -1,4 +1,3 @@
-import { EXP_QUEST_RATE, MONSTER_RATE } from '@/exp/constants';
 import { compareJourneys } from '@/exp/lib/compare-journeys';
 import { exploreQueueJourneys } from '@/exp/lib/explore-queue-journeys';
 import { getMonsterContext } from '@/exp/types/monster-context';
@@ -11,6 +10,7 @@ import type { JourneyContext } from '@/exp/types/journey-context';
 import type { QuestJourney } from '@/exp/types/quest-journey';
 import type { ExpJourney } from '@/exp/types/exp-journey';
 import { CurrentMonster } from '@/exp/types/current-monster';
+import type { ExpRates } from '@/exp/types/exp-rates';
 
 type Args = {
   readonly start: Exp;
@@ -18,6 +18,7 @@ type Args = {
   readonly allowedQuests: ReadonlySet<QuestId>;
   readonly allowedMonsters: ReadonlySet<MonsterId>;
   readonly completedQuests: ReadonlySet<QuestId>;
+  readonly expRates: ExpRates;
 };
 
 export function* getExpJourney({
@@ -26,13 +27,14 @@ export function* getExpJourney({
   allowedQuests,
   allowedMonsters,
   completedQuests,
+  expRates,
 }: Args): Generator<ExpJourney> {
   const quests = getQuestContext(
     allowedQuests,
     completedQuests,
-    EXP_QUEST_RATE,
+    expRates.quest,
   );
-  const monsters = getMonsterContext(allowedMonsters, MONSTER_RATE);
+  const monsters = getMonsterContext(allowedMonsters, expRates.monster);
 
   const [availableQuests, lockedQuests] = quests.allQuests.reduce(
     ([available, locked], quest) => {

@@ -1,4 +1,5 @@
 import { getExpJourney } from '@/exp/lib/get-exp-journey';
+import type { ExpRates } from '@/exp/types/exp-rates';
 import { Exp } from '@/exp/types/journey';
 import type { MonsterId } from '@/exp/types/monster-id';
 import { QuestId } from '@/exp/types/quest-id';
@@ -13,6 +14,7 @@ export type ExpJourneyWorkerArgs = {
   readonly targetJobLvl: number;
   readonly completedQuests: ReadonlyArray<QuestId>;
   readonly allowedMonsters: ReadonlyArray<MonsterId>;
+  readonly expRates: ExpRates;
 };
 
 self.onmessage = (event) => {
@@ -23,6 +25,7 @@ self.onmessage = (event) => {
     targetJobLvl,
     completedQuests,
     allowedMonsters,
+    expRates,
   } = event.data as ExpJourneyWorkerArgs;
 
   const start = performance.now();
@@ -41,6 +44,7 @@ self.onmessage = (event) => {
       allowedQuests: new Set(Object.values(QuestId)),
       allowedMonsters: new Set(allowedMonsters),
       completedQuests: new Set(completedQuests),
+      expRates,
     });
 
     for (const value of generator) {

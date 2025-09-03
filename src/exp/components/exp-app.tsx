@@ -18,6 +18,9 @@ export function ExpApp() {
   const [targetBaseLvl, setTargetBaseLvl] = useState(1);
   const [targetJobLvl, setTargetJobLvl] = useState(50);
 
+  const [questRates, setQuestRates] = useState(1);
+  const [monsterRates, setMonsterRates] = useState(1);
+
   const [completedQuests, setCompletedQuests] = useState<
     ReadonlyArray<QuestId>
   >([]);
@@ -36,6 +39,10 @@ export function ExpApp() {
       targetJobLvl,
       completedQuests,
       allowedMonsters,
+      expRates: {
+        quest: questRates,
+        monster: monsterRates,
+      },
     });
 
     return () => cleanUp();
@@ -46,41 +53,69 @@ export function ExpApp() {
     targetJobLvl,
     completedQuests,
     allowedMonsters,
+    questRates,
+    monsterRates,
     startGenerator,
   ]);
 
   return (
     <div className="flex gap-3">
       <div className="flex flex-col gap-3">
-        <div className="flex gap-2">
-          <input
-            className="border border-red-700"
-            value={startBaseLvl}
-            onChange={(e) =>
-              setStartBaseLvl(Number(e.currentTarget.value) || 1)
-            }
-          />
-          <input
-            className="border border-red-700"
-            value={startJobLvl}
-            onChange={(e) => setStartJobLvl(Number(e.currentTarget.value) || 1)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <input
-            className="border border-red-700"
-            value={targetBaseLvl}
-            onChange={(e) =>
-              setTargetBaseLvl(Number(e.currentTarget.value) || 1)
-            }
-          />
-          <input
-            className="border border-red-700"
-            value={targetJobLvl}
-            onChange={(e) =>
-              setTargetJobLvl(Number(e.currentTarget.value) || 1)
-            }
-          />
+        <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-2 gap-y-1">
+          <div className="col-span-full grid grid-cols-subgrid">
+            <label>Quest rates</label>
+            <input
+              className="border border-red-700"
+              value={questRates}
+              onChange={(e) =>
+                setQuestRates(Number(e.currentTarget.value) || 1)
+              }
+            />
+            <label>Monster rates</label>
+            <input
+              className="border border-red-700"
+              value={monsterRates}
+              onChange={(e) =>
+                setMonsterRates(Number(e.currentTarget.value) || 1)
+              }
+            />
+          </div>
+          <div className="col-span-full grid grid-cols-subgrid">
+            <label>Start base</label>
+            <input
+              className="border border-red-700"
+              value={startBaseLvl}
+              onChange={(e) =>
+                setStartBaseLvl(Number(e.currentTarget.value) || 1)
+              }
+            />
+            <label>Start job</label>
+            <input
+              className="border border-red-700"
+              value={startJobLvl}
+              onChange={(e) =>
+                setStartJobLvl(Number(e.currentTarget.value) || 1)
+              }
+            />
+          </div>
+          <div className="col-span-full grid grid-cols-subgrid">
+            <label>Target base</label>
+            <input
+              className="border border-red-700"
+              value={targetBaseLvl}
+              onChange={(e) =>
+                setTargetBaseLvl(Number(e.currentTarget.value) || 1)
+              }
+            />
+            <label>Target job</label>
+            <input
+              className="border border-red-700"
+              value={targetJobLvl}
+              onChange={(e) =>
+                setTargetJobLvl(Number(e.currentTarget.value) || 1)
+              }
+            />
+          </div>
         </div>
         <div
           className={cn(
