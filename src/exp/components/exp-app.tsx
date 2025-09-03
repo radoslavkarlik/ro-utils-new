@@ -14,7 +14,8 @@ import {
 } from "@/exp/types/overcap-settings";
 import { QuestId } from "@/exp/types/quest-id";
 import { cn } from "@/lib/cn";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 
 export function ExpApp() {
   const [startBaseLvl, setStartBaseLvl] = useState(11);
@@ -57,7 +58,7 @@ export function ExpApp() {
       },
     });
 
-    return () => cleanUp();
+    return () => cleanUp?.();
   }, [
     startBaseLvl,
     startJobLvl,
@@ -320,14 +321,14 @@ const useGeneratorWorker = () => {
     return () => worker.terminate(); // Cleanup worker on unmount
   }, [worker]);
 
-  const startGenerator = useCallback((args: ExpJourneyWorkerArgs) => {
+  const startGenerator = useDebouncedCallback((args: ExpJourneyWorkerArgs) => {
     const worker = new WorkerURL();
     setWorker(worker);
 
     worker.postMessage(args); // Pass arguments to worker
 
     return () => worker.terminate();
-  }, []);
+  }, 200);
 
   return { value, startGenerator };
 };
