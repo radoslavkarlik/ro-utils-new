@@ -22,12 +22,10 @@ Toggle to allow some wasted exp fixed or % or max level
 terminate early if also reached target level
 
 
-sort by estimated total kills but remove only by actual total kills
 add ignore overlevel under specific conditions
 - like always, or only when reaching target goal shortly etc 
 - work with OVERLEVEL_PROTECTION
 add extra UI stuff like decisions to kill monsters to prevent overlevel and also that some exp were potentionally wasted
-binary search tree for overlevel protection
 find minimum level test
 
-sorting metric -> highest prio = highest completed quest, then if same lowest killed mobs
+got stuck in calculation if put target as blvl 80 rates 1

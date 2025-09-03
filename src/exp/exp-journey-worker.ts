@@ -7,22 +7,30 @@ import { enableMapSet } from 'immer';
 enableMapSet();
 
 export type ExpJourneyWorkerArgs = {
-  readonly baseLvl: number;
-  readonly jobLvl: number;
+  readonly startBaseLvl: number;
+  readonly startJobLvl: number;
+  readonly targetBaseLvl: number;
+  readonly targetJobLvl: number;
   readonly completedQuests: ReadonlyArray<QuestId>;
   readonly allowedMonsters: ReadonlyArray<MonsterId>;
 };
 
 self.onmessage = (event) => {
-  const { baseLvl, jobLvl, completedQuests, allowedMonsters } =
-    event.data as ExpJourneyWorkerArgs;
+  const {
+    startBaseLvl,
+    startJobLvl,
+    targetBaseLvl,
+    targetJobLvl,
+    completedQuests,
+    allowedMonsters,
+  } = event.data as ExpJourneyWorkerArgs;
 
   const start = performance.now();
 
   try {
     const generator = getExpJourney({
-      start: new Exp({ baseLvl, jobLvl }),
-      target: new Exp({ jobLvl: 50, baseLvl: 1 }),
+      start: new Exp({ baseLvl: startBaseLvl, jobLvl: startJobLvl }),
+      target: new Exp({ baseLvl: targetBaseLvl, jobLvl: targetJobLvl }),
       // allowedQuests: Object.values(QuestId).filter(
       //   (q) =>
       //     q !== QuestId.LostChild &&

@@ -13,8 +13,11 @@ import { cn } from "@/lib/cn";
 import { Fragment, useCallback, useEffect, useState } from "react";
 
 export function ExpApp() {
-  const [baseLvl, setBaseLvl] = useState(11);
-  const [jobLvl, setJobLvl] = useState(1);
+  const [startBaseLvl, setStartBaseLvl] = useState(11);
+  const [startJobLvl, setStartJobLvl] = useState(1);
+  const [targetBaseLvl, setTargetBaseLvl] = useState(1);
+  const [targetJobLvl, setTargetJobLvl] = useState(50);
+
   const [completedQuests, setCompletedQuests] = useState<
     ReadonlyArray<QuestId>
   >([]);
@@ -27,14 +30,24 @@ export function ExpApp() {
 
   useEffect(() => {
     const cleanUp = startGenerator({
-      baseLvl,
-      jobLvl,
+      startBaseLvl,
+      startJobLvl,
+      targetBaseLvl,
+      targetJobLvl,
       completedQuests,
       allowedMonsters,
     });
 
     return () => cleanUp();
-  }, [baseLvl, jobLvl, completedQuests, allowedMonsters, startGenerator]);
+  }, [
+    startBaseLvl,
+    startJobLvl,
+    targetBaseLvl,
+    targetJobLvl,
+    completedQuests,
+    allowedMonsters,
+    startGenerator,
+  ]);
 
   return (
     <div className="flex gap-3">
@@ -42,13 +55,31 @@ export function ExpApp() {
         <div className="flex gap-2">
           <input
             className="border border-red-700"
-            value={baseLvl}
-            onChange={(e) => setBaseLvl(Number(e.currentTarget.value) || 1)}
+            value={startBaseLvl}
+            onChange={(e) =>
+              setStartBaseLvl(Number(e.currentTarget.value) || 1)
+            }
           />
           <input
             className="border border-red-700"
-            value={jobLvl}
-            onChange={(e) => setJobLvl(Number(e.currentTarget.value) || 1)}
+            value={startJobLvl}
+            onChange={(e) => setStartJobLvl(Number(e.currentTarget.value) || 1)}
+          />
+        </div>
+        <div className="flex gap-2">
+          <input
+            className="border border-red-700"
+            value={targetBaseLvl}
+            onChange={(e) =>
+              setTargetBaseLvl(Number(e.currentTarget.value) || 1)
+            }
+          />
+          <input
+            className="border border-red-700"
+            value={targetJobLvl}
+            onChange={(e) =>
+              setTargetJobLvl(Number(e.currentTarget.value) || 1)
+            }
           />
         </div>
         <div
