@@ -38,6 +38,24 @@ export const getExpBeforeExpReward = (
 
     let totalKills = 0;
 
+    const markStep = (): void => {
+      if (totalKills <= 0) {
+        return;
+      }
+
+      killsJourney = produce(killsJourney, (killsJourney) => {
+        killsJourney.steps.push({
+          type: 'monster',
+          exp,
+          monsterId: monster.id,
+          monsterName: monster.name,
+          kills: totalKills,
+        });
+
+        killsJourney.totalKills += totalKills;
+      });
+    };
+
     epxLoop: for (
       ;
       exp.raw.baseExp < targetExp;
@@ -74,7 +92,6 @@ export const getExpBeforeExpReward = (
             break;
         }
 
-        // TODO percent per single in batch or per total?
         const allowedMinReward: ExpReward = {
           base: Math.floor(reward.base * (1 - allowPercentWaste / 100)),
           job: Math.floor(reward.job * (1 - allowPercentWaste / 100)),
@@ -89,40 +106,11 @@ export const getExpBeforeExpReward = (
       }
 
       finishedExp = totalExp;
-
-      if (totalKills > 0) {
-        killsJourney = produce(killsJourney, (killsJourney) => {
-          killsJourney.steps.push({
-            type: 'monster',
-            exp,
-            monsterId: monster.id,
-            monsterName: monster.name,
-            kills: totalKills,
-          });
-
-          killsJourney.totalKills += totalKills;
-        });
-      }
-
+      markStep();
       break thresholdLoop;
     }
 
-    // TODO if it is here shouldnt it be fail?
-
-    if (totalKills > 0) {
-      // TODO how can this be 0 at this point?
-      killsJourney = produce(killsJourney, (killsJourney) => {
-        killsJourney.steps.push({
-          type: 'monster',
-          exp,
-          monsterId: monster.id,
-          monsterName: monster.name,
-          kills: totalKills,
-        });
-
-        killsJourney.totalKills += totalKills;
-      });
-    }
+    markStep();
   }
 
   journey.addKills(killsJourney);

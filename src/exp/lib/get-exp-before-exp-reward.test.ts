@@ -6,8 +6,6 @@ import { MonsterId } from '@/exp/types/monster-id';
 
 const monsters = getMonsterContext(new Set(Object.values(MonsterId)), 1);
 
-// TODO tests for getExpBeforeExpReward
-
 describe('getExpBeforeExpReward', () => {
   test('returns correct base level for base exp only', () => {
     const [result] = findMinimumLevelForExpReward(
