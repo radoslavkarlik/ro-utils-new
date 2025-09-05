@@ -18,9 +18,8 @@ export const maxJobLevel =
 export const getExpBeforeExpReward = (
   journey: Journey,
   rewards: ReadonlyArray<ExpReward>,
-): false | { readonly finishedExp: Exp } => {
-  const { ignoreOverlevel, allowPercentWaste } =
-    journey.context.overcapSettings;
+): Exp => {
+  const { allowPercentWaste, ignoreWaste } = journey.context.overcapSettings;
   const relevantThresholds = journey.monster.getRelevantThresholds(
     journey.quests.completedQuests,
   );
@@ -56,7 +55,7 @@ export const getExpBeforeExpReward = (
       });
     };
 
-    epxLoop: for (
+    expLoop: for (
       ;
       exp.raw.baseExp < targetExp;
       exp = addReward(exp, monster.reward), totalKills++
@@ -67,41 +66,45 @@ export const getExpBeforeExpReward = (
         const cappedReward = capExpReward(totalExp, reward);
         totalExp = addReward(totalExp, cappedReward);
 
-        switch (ignoreOverlevel) {
+        const allowedMinReward: ExpReward = {
+          base: Math.floor(reward.base * (1 - allowPercentWaste / 100)),
+          job: Math.floor(reward.job * (1 - allowPercentWaste / 100)),
+        };
+
+        const hasWaste =
+          cappedReward.base < allowedMinReward.base ||
+          cappedReward.job < allowedMinReward.job;
+
+        if (!hasWaste) {
+          continue;
+        }
+
+        switch (ignoreWaste) {
           case 'always':
-            continue;
+            continue rewardsLoop;
 
           case 'short-of-target':
             if (
               totalExp.level.baseLvl + 1 >= maxBaseLevel ||
               totalExp.level.jobLvl + 1 >= maxJobLevel
             ) {
-              break rewardsLoop;
+              break expLoop;
             }
 
-            break;
+            continue expLoop;
 
           case 'full-target':
             if (
               totalExp.level.baseLvl >= maxBaseLevel ||
               totalExp.level.jobLvl >= maxJobLevel
             ) {
-              break rewardsLoop;
+              break expLoop;
             }
 
-            break;
-        }
+            continue expLoop;
 
-        const allowedMinReward: ExpReward = {
-          base: Math.floor(reward.base * (1 - allowPercentWaste / 100)),
-          job: Math.floor(reward.job * (1 - allowPercentWaste / 100)),
-        };
-
-        if (
-          cappedReward.base < allowedMinReward.base ||
-          cappedReward.job < allowedMinReward.job
-        ) {
-          continue epxLoop;
+          default:
+            continue expLoop;
         }
       }
 
@@ -116,5 +119,5 @@ export const getExpBeforeExpReward = (
   journey.addKills(killsJourney);
   journey.monster.catchUp(journey.exp, journey.quests.completedQuests);
 
-  return { finishedExp };
+  return finishedExp;
 };

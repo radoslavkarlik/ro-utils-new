@@ -10,8 +10,8 @@ import {
 import type { Exp } from "@/exp/types/exp";
 import { MonsterId } from "@/exp/types/monster-id";
 import {
-  ignoreOverlevelSettings,
-  type IgnoreOverlevelSettings,
+  ignoreWasteSettings,
+  type IgnoreWasteSettings,
 } from "@/exp/types/overcap-settings";
 import { QuestId } from "@/exp/types/quest-id";
 import { cn } from "@/lib/cn";
@@ -32,9 +32,9 @@ export function ExpApp() {
   const [questRates, setQuestRates] = useState(1);
   const [monsterRates, setMonsterRates] = useState(1);
 
-  const [ignoreOverlevel, setIgnoreOverlevel] =
-    useState<IgnoreOverlevelSettings>("short-of-target");
   const [allowPercentWaste, setAllowPercentWaste] = useState(10);
+  const [ignoreWaste, setIgnoreWaste] =
+    useState<IgnoreWasteSettings>("short-of-target");
 
   const [completedQuests, setCompletedQuests] = useState<
     ReadonlyArray<QuestId>
@@ -69,7 +69,7 @@ export function ExpApp() {
         monster: monsterRates,
       },
       overcapSettings: {
-        ignoreOverlevel,
+        ignoreWaste: ignoreWaste,
         allowPercentWaste,
       },
     });
@@ -84,7 +84,7 @@ export function ExpApp() {
     allowedMonsters,
     questRates,
     monsterRates,
-    ignoreOverlevel,
+    ignoreWaste,
     allowPercentWaste,
     startGenerator,
   ]);
@@ -169,26 +169,6 @@ export function ExpApp() {
         <div className="grid grid-cols-[min-content_min-content] gap-x-2 gap-y-2">
           <div className="col-span-full grid grid-cols-subgrid">
             <label className="whitespace-nowrap font-medium">
-              Ignore overlevel
-            </label>
-            <select
-              className="border border-red-700"
-              value={ignoreOverlevel}
-              onChange={(e) =>
-                setIgnoreOverlevel(
-                  e.currentTarget.value as IgnoreOverlevelSettings
-                )
-              }
-            >
-              {ignoreOverlevelSettings.map((setting) => (
-                <option key={setting} value={setting}>
-                  {setting}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-span-full grid grid-cols-subgrid">
-            <label className="whitespace-nowrap font-medium">
               Allow percent waste
             </label>
             <input
@@ -201,6 +181,24 @@ export function ExpApp() {
                 }
               }}
             />
+          </div>
+          <div className="col-span-full grid grid-cols-subgrid">
+            <label className="whitespace-nowrap font-medium">
+              Ignore waste
+            </label>
+            <select
+              className="border border-red-700"
+              value={ignoreWaste}
+              onChange={(e) =>
+                setIgnoreWaste(e.currentTarget.value as IgnoreWasteSettings)
+              }
+            >
+              {ignoreWasteSettings.map((setting) => (
+                <option key={setting} value={setting}>
+                  {setting}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div

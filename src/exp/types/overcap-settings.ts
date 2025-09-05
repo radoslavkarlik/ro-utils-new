@@ -1,13 +1,13 @@
-export const ignoreOverlevelSettings = [
+export const ignoreWasteSettings = [
   'always',
   'full-target',
   'short-of-target',
   'never',
 ] as const;
 
-export type IgnoreOverlevelSettings = (typeof ignoreOverlevelSettings)[number];
+export type IgnoreWasteSettings = (typeof ignoreWasteSettings)[number];
 
 export type OvercapSettings = {
-  readonly ignoreOverlevel: IgnoreOverlevelSettings;
   readonly allowPercentWaste: number;
+  readonly ignoreWaste: IgnoreWasteSettings;
 };

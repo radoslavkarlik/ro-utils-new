@@ -23,7 +23,7 @@ describe('', () => {
         monster: 1,
       },
       overcapSettings: {
-        ignoreOverlevel: 'short-of-target',
+        ignoreWaste: 'short-of-target',
         allowPercentWaste: 10,
       },
     }).toArray();
