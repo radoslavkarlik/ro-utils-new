@@ -2,6 +2,7 @@ import type { Monster } from '@/exp/monsters';
 import type { Exp } from '@/exp/types/exp';
 import type { QuestId } from '@/exp/types/quest-id';
 import { numericallyAsc, sortByProp } from '@/lib/sort-by';
+import { produce } from 'immer';
 
 export type MonsterThreshold = {
   readonly monster: Monster;
@@ -66,10 +67,16 @@ export class CurrentMonster {
       ({ current }) => !!current.quests.difference(completedQuests).size,
     );
 
-    if (index === -1) {
-      return this.#thresholds;
-    }
+    const thresholds =
+      index === -1 ? this.#thresholds : this.#thresholds.slice(0, index);
 
-    return this.#thresholds.slice(0, index);
+    return produce(thresholds, (thresholds) => {
+      const lastThreshold = thresholds[thresholds.length - 1];
+
+      if (lastThreshold) {
+        // Last one never can have next
+        lastThreshold.next = undefined;
+      }
+    });
   }
 }
