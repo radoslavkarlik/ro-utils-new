@@ -1,4 +1,13 @@
-import { getBaseExp, getBaseLevel, getJobExp, getJobLevel } from '@/exp/calc';
+import {
+  getBaseExp,
+  getBaseLevel,
+  getJobExp,
+  getJobLevel,
+  maxBaseLevel,
+  maxBaseRaw,
+  maxJobLevel,
+  maxJobRaw,
+} from '@/exp/calc';
 import {
   emptyRawExp,
   isRawExpPoint,
@@ -14,13 +23,13 @@ export class Exp {
 
   constructor(exp: LevelExpPoint | RawExpPoint) {
     if (isRawExpPoint(exp)) {
-      this.#baseExp = exp.baseExp;
-      this.#jobExp = exp.jobExp;
+      this.#baseExp = Math.min(maxBaseRaw, exp.baseExp);
+      this.#jobExp = Math.min(maxJobRaw, exp.jobExp);
       this.#baseLvl = getBaseLevel(exp.baseExp);
       this.#jobLvl = getJobLevel(exp.jobExp);
     } else {
-      this.#baseLvl = exp.baseLvl;
-      this.#jobLvl = exp.jobLvl;
+      this.#baseLvl = Math.min(maxBaseLevel, exp.baseLvl);
+      this.#jobLvl = Math.min(maxJobLevel, exp.jobLvl);
       this.#baseExp = getBaseExp(exp.baseLvl);
       this.#jobExp = getJobExp(exp.jobLvl);
     }
