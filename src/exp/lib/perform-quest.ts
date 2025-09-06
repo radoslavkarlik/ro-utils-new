@@ -72,7 +72,13 @@ export const performQuest = (
       return null;
     }
   } else {
-    const finishedExp = getExpBeforeExpReward(newJourney, quest);
+    const result = getExpBeforeExpReward(newJourney, quest);
+
+    if (!result.success) {
+      return null;
+    }
+
+    const { finishedExp } = result;
 
     newJourney.addExp({
       type: 'quest',

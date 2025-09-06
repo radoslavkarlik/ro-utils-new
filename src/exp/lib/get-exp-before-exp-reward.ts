@@ -19,7 +19,11 @@ export const maxJobLevel =
 export const getExpBeforeExpReward = (
   journey: Journey,
   quest: ExpQuest,
-): Exp => {
+):
+  | { readonly success: true; readonly finishedExp: Exp }
+  | {
+      readonly success: false;
+    } => {
   const rewards = getRewardsArray(quest.reward);
   const { allowPercentWasteQuests, ignoreWaste } =
     journey.context.overcapSettings;
@@ -30,7 +34,7 @@ export const getExpBeforeExpReward = (
   const allowPercentWaste = allowPercentWasteQuests.get(quest.id) ?? 0;
 
   let exp = journey.exp;
-  let finishedExp = journey.exp;
+  let finishedExp: Exp | null = null;
   let killsJourney: KillsJourney = {
     steps: [],
     totalKills: 0,
@@ -93,6 +97,7 @@ export const getExpBeforeExpReward = (
               totalExp.level.baseLvl + 1 >= maxBaseLevel ||
               totalExp.level.jobLvl + 1 >= maxJobLevel
             ) {
+              finishedExp = totalExp;
               break expLoop;
             }
 
@@ -103,6 +108,7 @@ export const getExpBeforeExpReward = (
               totalExp.level.baseLvl >= maxBaseLevel ||
               totalExp.level.jobLvl >= maxJobLevel
             ) {
+              finishedExp = totalExp;
               break expLoop;
             }
 
@@ -121,8 +127,12 @@ export const getExpBeforeExpReward = (
     markStep();
   }
 
+  if (!finishedExp) {
+    return { success: false };
+  }
+
   journey.addKills(killsJourney);
   journey.monster.catchUp(journey.exp, journey.quests.completedQuests);
 
-  return finishedExp;
+  return { success: true, finishedExp };
 };
