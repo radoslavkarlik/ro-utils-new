@@ -3,10 +3,12 @@ import { MIN_EXP_REWARD } from '@/exp/quests';
 import { CurrentMonster } from '@/exp/types/current-monster';
 import { Exp } from '@/exp/types/exp';
 import type { LevelExpPoint } from '@/exp/types/exp-point';
+import type { ExpReward } from '@/exp/types/exp-reward';
 import { Journey } from '@/exp/types/journey';
 import type { JourneyContext } from '@/exp/types/journey-context';
 import { getMonsterContext } from '@/exp/types/monster-context';
 import { MonsterId } from '@/exp/types/monster-id';
+import type { ExpQuest } from '@/exp/types/quest';
 import { getQuestContext } from '@/exp/types/quest-context';
 import { QuestId } from '@/exp/types/quest-id';
 import type { QuestJourney } from '@/exp/types/quest-journey';
@@ -32,23 +34,32 @@ const quest: QuestJourney = {
 const context: JourneyContext = {
   overcapSettings: {
     ignoreWaste: 'short-of-target',
-    allowPercentWaste: 0,
+    allowPercentWasteQuests: new Map(),
   },
   monsters,
   quests: getQuestContext(availableQuests, completedQuests, 1),
   targetExp: new Exp({ baseLvl: 1, jobLvl: 50 }),
 };
 
+const getExpQuest = (reward: ReadonlyArray<ExpReward>): ExpQuest => ({
+  type: 'exp',
+  id: QuestId.AcolyteTraining,
+  reward,
+});
+
 describe('getExpBeforeExpReward', () => {
   test('returns correct base level for base exp only', () => {
     const monster = CurrentMonster.create(monsters.allMonsters);
     const journey = new Journey(startExp, monster, context, quest);
-    getExpBeforeExpReward(journey, [
-      {
-        base: 900_000,
-        job: MIN_EXP_REWARD,
-      },
-    ]);
+    getExpBeforeExpReward(
+      journey,
+      getExpQuest([
+        {
+          base: 900_000,
+          job: MIN_EXP_REWARD,
+        },
+      ]),
+    );
 
     expect(journey.exp.level).toStrictEqual({
       baseLvl: 63.00033568867983,
@@ -59,7 +70,7 @@ describe('getExpBeforeExpReward', () => {
   test('returns correct job level for job exp only', () => {
     const monster = CurrentMonster.create(monsters.allMonsters);
     const journey = new Journey(startExp, monster, context, quest);
-    getExpBeforeExpReward(journey, [{ base: 1, job: 600_000 }]);
+    getExpBeforeExpReward(journey, getExpQuest([{ base: 1, job: 600_000 }]));
 
     expect(journey.exp.level).toStrictEqual({
       baseLvl: 62.52184946937003,
@@ -70,7 +81,10 @@ describe('getExpBeforeExpReward', () => {
   test('returns correct base and job level for both base and job exp', () => {
     const monster = CurrentMonster.create(monsters.allMonsters);
     const journey = new Journey(startExp, monster, context, quest);
-    getExpBeforeExpReward(journey, [{ base: 900_000, job: 600_000 }]);
+    getExpBeforeExpReward(
+      journey,
+      getExpQuest([{ base: 900_000, job: 600_000 }]),
+    );
 
     expect(journey.exp.level).toStrictEqual({
       baseLvl: 63.00033568867983,
@@ -82,12 +96,15 @@ describe('getExpBeforeExpReward', () => {
     const startExp = new Exp({ baseExp: 21, jobExp: 0 });
     const monster = CurrentMonster.create(monsters.allMonsters);
     const journey = new Journey(startExp, monster, context, quest);
-    getExpBeforeExpReward(journey, [
-      {
-        base: 1399,
-        job: MIN_EXP_REWARD,
-      },
-    ]);
+    getExpBeforeExpReward(
+      journey,
+      getExpQuest([
+        {
+          base: 1399,
+          job: MIN_EXP_REWARD,
+        },
+      ]),
+    );
 
     expect(journey.exp.level).toStrictEqual({
       baseLvl: 14,
@@ -98,11 +115,14 @@ describe('getExpBeforeExpReward', () => {
   test('returns correct base and job level for batched quests', () => {
     const monster = CurrentMonster.create(monsters.allMonsters);
     const journey = new Journey(startExp, monster, context, quest);
-    getExpBeforeExpReward(journey, [
-      { base: 2_000, job: 2_000 },
-      { base: MIN_EXP_REWARD, job: 1_000 },
-      { base: 5_000, job: 3_000 },
-    ]);
+    getExpBeforeExpReward(
+      journey,
+      getExpQuest([
+        { base: 2_000, job: 2_000 },
+        { base: MIN_EXP_REWARD, job: 1_000 },
+        { base: 5_000, job: 3_000 },
+      ]),
+    );
 
     expect(journey.exp.level).toStrictEqual({
       baseLvl: 24.22164536741214,
@@ -114,11 +134,14 @@ describe('getExpBeforeExpReward', () => {
     const startExp = new Exp({ baseLvl: 44, jobLvl: 23 });
     const monster = CurrentMonster.create(monsters.allMonsters);
     const journey = new Journey(startExp, monster, context, quest);
-    getExpBeforeExpReward(journey, [
-      { base: 90_000, job: 12_000 },
-      { base: 30_000, job: 12_000 },
-      { base: 139731, job: 12_000 },
-    ]);
+    getExpBeforeExpReward(
+      journey,
+      getExpQuest([
+        { base: 90_000, job: 12_000 },
+        { base: 30_000, job: 12_000 },
+        { base: 139731, job: 12_000 },
+      ]),
+    );
 
     expect(journey.exp.level).toStrictEqual({
       baseLvl: 45.042999708998785,

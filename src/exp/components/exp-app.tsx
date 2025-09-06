@@ -22,6 +22,7 @@ import { getRewardsArray } from "@/exp/types/quest";
 import { addRewards, emptyReward } from "@/exp/types/exp-reward";
 import type { ExpRates } from "@/exp/types/exp-rates";
 import { getQuestContext } from "@/exp/types/quest-context";
+import { produce } from "immer";
 
 export function ExpApp() {
   const [startBaseLvl, setStartBaseLvl] = useState(11);
@@ -32,13 +33,17 @@ export function ExpApp() {
   const [questRates, setQuestRates] = useState(1);
   const [monsterRates, setMonsterRates] = useState(1);
 
-  const [allowPercentWaste, setAllowPercentWaste] = useState(10);
+  const [allowPercentWasteQuests, setAllowPercentWasteQuests] = useState<
+    ReadonlyMap<QuestId, number>
+  >(new Map([[QuestId.LostChild, 2]]));
+
   const [ignoreWaste, setIgnoreWaste] =
     useState<IgnoreWasteSettings>("short-of-target");
 
   const [completedQuests, setCompletedQuests] = useState<
     ReadonlyArray<QuestId>
   >([]);
+
   const [allowedMonsters, setAllowedMonsters] = useState<
     ReadonlyArray<MonsterId>
   >([MonsterId.Spore, MonsterId.Muka, MonsterId.Wolf, MonsterId.Metaling]);
@@ -69,8 +74,8 @@ export function ExpApp() {
         monster: monsterRates,
       },
       overcapSettings: {
-        ignoreWaste: ignoreWaste,
-        allowPercentWaste,
+        ignoreWaste,
+        allowPercentWasteQuests,
       },
     });
 
@@ -85,7 +90,7 @@ export function ExpApp() {
     questRates,
     monsterRates,
     ignoreWaste,
-    allowPercentWaste,
+    allowPercentWasteQuests,
     startGenerator,
   ]);
 
@@ -166,40 +171,21 @@ export function ExpApp() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-[min-content_min-content] gap-x-2 gap-y-2">
-          <div className="col-span-full grid grid-cols-subgrid">
-            <label className="whitespace-nowrap font-medium">
-              Allow percent waste
-            </label>
-            <input
-              className="border border-red-700"
-              type="number"
-              value={allowPercentWaste}
-              onChange={(e) => {
-                if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
-                  setAllowPercentWaste(e.currentTarget.valueAsNumber);
-                }
-              }}
-            />
-          </div>
-          <div className="col-span-full grid grid-cols-subgrid">
-            <label className="whitespace-nowrap font-medium">
-              Ignore waste
-            </label>
-            <select
-              className="border border-red-700"
-              value={ignoreWaste}
-              onChange={(e) =>
-                setIgnoreWaste(e.currentTarget.value as IgnoreWasteSettings)
-              }
-            >
-              {ignoreWasteSettings.map((setting) => (
-                <option key={setting} value={setting}>
-                  {setting}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex items-center gap-2">
+          <label className="whitespace-nowrap font-medium">Ignore waste</label>
+          <select
+            className="border border-red-700"
+            value={ignoreWaste}
+            onChange={(e) =>
+              setIgnoreWaste(e.currentTarget.value as IgnoreWasteSettings)
+            }
+          >
+            {ignoreWasteSettings.map((setting) => (
+              <option key={setting} value={setting}>
+                {setting}
+              </option>
+            ))}
+          </select>
         </div>
         <div
           className={cn(
@@ -295,28 +281,60 @@ export function ExpApp() {
       </div>
       <div className="flex flex-col gap-1">
         <div className="font-medium">Completed quests</div>
-        {Object.values(quests).map((quest) => {
-          const isCompleted = completedQuests.includes(quest.id);
+        <div className="grid grid-cols-[min-content_min-content] gap-x-1 gap-y-1">
+          {Object.values(quests).map((quest) => {
+            const isCompleted = completedQuests.includes(quest.id);
 
-          return (
-            <label key={quest.id} className="flex gap-1">
-              <input
-                type="checkbox"
-                defaultChecked={isCompleted}
-                onChange={() =>
-                  setCompletedQuests((prev) => {
-                    if (isCompleted) {
-                      return prev.filter((questId) => questId !== quest.id);
+            return (
+              <div
+                key={quest.id}
+                className="col-span-full grid grid-cols-subgrid"
+              >
+                <label className="flex gap-1">
+                  <input
+                    type="checkbox"
+                    defaultChecked={isCompleted}
+                    onChange={() =>
+                      setCompletedQuests((prev) => {
+                        if (isCompleted) {
+                          return prev.filter((questId) => questId !== quest.id);
+                        }
+
+                        return [...prev, quest.id];
+                      })
                     }
+                  />
+                  {quest.id}
+                </label>
+                <input
+                  className="max-w-[100px] border border-red-700"
+                  type="number"
+                  value={allowPercentWasteQuests.get(quest.id) ?? ""}
+                  onChange={(e) => {
+                    if (!e.currentTarget.value) {
+                      setAllowPercentWasteQuests(
+                        produce((allowPercentWasteQuests) => {
+                          allowPercentWasteQuests.delete(quest.id);
+                        })
+                      );
+                    } else if (!Number.isNaN(e.currentTarget.valueAsNumber)) {
+                      const allowPercentWaste = e.currentTarget.valueAsNumber;
 
-                    return [...prev, quest.id];
-                  })
-                }
-              />
-              {quest.id}
-            </label>
-          );
-        })}
+                      setAllowPercentWasteQuests(
+                        produce((allowPercentWasteQuests) => {
+                          allowPercentWasteQuests.set(
+                            quest.id,
+                            allowPercentWaste
+                          );
+                        })
+                      );
+                    }
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
       <div className="flex flex-col gap-1">
         <div className="font-medium">Allowed monsters</div>

@@ -12,7 +12,9 @@ allow user define monster thresholds
 .got stuck in calculation if put target as blvl 80 job 1 rates 1
 never, 0 waste without metaling took 35 seconds
 
-allow wasted per quest, slider 0-100
+slider 0-100
+min, max limits,
+UI validation
 
 apply monster kill reward cap
 

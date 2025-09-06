@@ -1,3 +1,5 @@
+import type { QuestId } from '@/exp/types/quest-id';
+
 export const ignoreWasteSettings = [
   'always',
   'full-target',
@@ -8,6 +10,6 @@ export const ignoreWasteSettings = [
 export type IgnoreWasteSettings = (typeof ignoreWasteSettings)[number];
 
 export type OvercapSettings = {
-  readonly allowPercentWaste: number;
+  readonly allowPercentWasteQuests: ReadonlyMap<QuestId, number>;
   readonly ignoreWaste: IgnoreWasteSettings;
 };

@@ -6,10 +6,14 @@ import type { ExpReward } from '@/exp/types/exp-reward';
 import type { Monster } from './monsters';
 import type { Exp } from '@/exp/types/exp';
 
-export const maxBaseLevel =
-  Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
-export const maxJobLevel =
-  Number(Object.keys(jobExpChart).toReversed()[0]) || 1;
+const maxBase = Object.entries(baseExpChart).toReversed()[0];
+const maxJob = Object.entries(jobExpChart).toReversed()[0];
+
+export const maxBaseLevel = Number(maxBase?.[0]) || 1;
+export const maxBaseRaw = Number(maxBase?.[1].totalExp) || 0;
+
+export const maxJobLevel = Number(maxJob?.[0]) || 1;
+export const maxJobRaw = Number(maxJob?.[1].totalExp) || 0;
 
 const emptyExpEntry = [1, { totalExp: 0, expToNextLevel: 0 }] as const;
 

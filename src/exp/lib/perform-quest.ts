@@ -4,7 +4,7 @@ import { getExpBeforeExpReward } from '@/exp/lib/get-exp-before-exp-reward';
 import { getKillsJourney } from '@/exp/lib/get-kills-journey';
 import { Exp } from '@/exp/types/exp';
 import type { Journey } from '@/exp/types/journey';
-import { getRewardsArray, isExpQuest } from '@/exp/types/quest';
+import { isExpQuest } from '@/exp/types/quest';
 import type { QuestId } from '@/exp/types/quest-id';
 
 export const performQuest = (
@@ -72,10 +72,7 @@ export const performQuest = (
       return null;
     }
   } else {
-    const finishedExp = getExpBeforeExpReward(
-      newJourney,
-      getRewardsArray(quest.reward),
-    );
+    const finishedExp = getExpBeforeExpReward(newJourney, quest);
 
     newJourney.addExp({
       type: 'quest',

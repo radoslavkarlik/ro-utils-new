@@ -24,7 +24,7 @@ describe('', () => {
       },
       overcapSettings: {
         ignoreWaste: 'short-of-target',
-        allowPercentWaste: 10,
+        allowPercentWasteQuests: new Map([[QuestId.LostChild, 2]]),
       },
     }).toArray();
   });

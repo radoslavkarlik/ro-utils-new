@@ -10,6 +10,9 @@ if (!root) {
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
+import { enableMapSet } from "immer";
+
+enableMapSet();
 
 // Create a new router instance
 const router = createRouter({ routeTree });

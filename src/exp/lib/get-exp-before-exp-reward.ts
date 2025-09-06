@@ -9,6 +9,7 @@ import { addReward } from '@/exp/lib/add-reward';
 import type { KillsJourney } from '@/exp/lib/get-kills-journey';
 import { produce } from 'immer';
 import type { Exp } from '@/exp/types/exp';
+import { getRewardsArray, type ExpQuest } from '@/exp/types/quest';
 
 export const maxBaseLevel =
   Number(Object.keys(baseExpChart).toReversed()[0]) || 1;
@@ -17,12 +18,16 @@ export const maxJobLevel =
 
 export const getExpBeforeExpReward = (
   journey: Journey,
-  rewards: ReadonlyArray<ExpReward>,
+  quest: ExpQuest,
 ): Exp => {
-  const { allowPercentWaste, ignoreWaste } = journey.context.overcapSettings;
+  const rewards = getRewardsArray(quest.reward);
+  const { allowPercentWasteQuests, ignoreWaste } =
+    journey.context.overcapSettings;
   const relevantThresholds = journey.monster.getRelevantThresholds(
     journey.quests.completedQuests,
   );
+
+  const allowPercentWaste = allowPercentWasteQuests.get(quest.id) ?? 0;
 
   let exp = journey.exp;
   let finishedExp = journey.exp;
